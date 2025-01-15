@@ -1,204 +1,188 @@
+from pyspark.sql import SparkSession
 import sys
-import boto3
-import pandas as pd
+from awsglue.utils import getResolvedOptions
+from awsglue.context import GlueContext
+from awsglue.job import Job
 import logging
-from concurrent.futures import ThreadPoolExecutor
 from typing import List, Dict
-import pyarrow.parquet as pq
-import io
-import psycopg2
-from psycopg2 import sql
+import pg8000
 
-# Setup logging
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
-
-# Environment configuration
-ENVIRONMENT = 'prod'  # Based on your terraform config
-
-# Get job parameters
-args = {
-    'source-bucket': f'nexabrands-{ENVIRONMENT}-source',  # Matches your S3 bucket naming
-    'target-bucket': f'nexabrands-{ENVIRONMENT}-target',
-    'redshift-database': 'nexabrands_datawarehouse',  # From your Redshift config
-    'redshift-schema': 'public',  # Default schema, adjust if needed
-    'redshift-workgroup': 'nexabrands-redshift-workgroup',
-    'redshift-namespace': 'nexabrands-redshift-namespace',
-    'redshift-username': 'admin',
-    'redshift-password': 'Password123!'  # In production, use AWS Secrets Manager
-}
-
-# Initialize AWS clients
-s3 = boto3.client('s3', region_name='us-east-1')
-redshift_serverless = boto3.client('redshift-serverless', region_name='us-east-1')
-
-class S3ToRedshiftETL:
-    def __init__(self):
-        self.source_bucket = args['source-bucket']
-        self.target_bucket = args['target-bucket']
-        self.database = args['redshift-database']
-        self.schema = args['redshift-schema']
-        self.workgroup = args['redshift-workgroup']
-        self.namespace = args['redshift-namespace']
-        self.batch_size = 100000
-        
-        # Get Redshift endpoint
-        try:
-            workgroup_response = redshift_serverless.get_workgroup(
-                workgroupName=self.workgroup
-            )
-            self.redshift_endpoint = workgroup_response['workgroup']['endpoint']['address']
-            
-            # Construct Redshift connection string
-            self.redshift_conn_string = (
-                f"host={self.redshift_endpoint} "
-                f"dbname={self.database} "
-                f"user={args['redshift-username']} "
-                f"password={args['redshift-password']} "
-                f"port=5439"
-            )
-        except Exception as e:
-            logger.error(f"Error getting Redshift endpoint: {str(e)}")
-            raise
+def create_spark_session(app_name: str = "S3ToRedshiftETL") -> SparkSession:
+    """
+    Create a Spark session with necessary configurations for Redshift connectivity
+    """
+    spark = SparkSession.builder \
+        .appName(app_name) \
+        .config("spark.sql.legacy.timeParserPolicy", "LEGACY") \
+        .getOrCreate()
     
-    def list_parquet_files(self, prefix: str) -> List[str]:
-        """List all parquet files in the given S3 prefix."""
-        try:
-            paginator = s3.get_paginator('list_objects_v2')
-            files = []
-            
-            for page in paginator.paginate(Bucket=self.source_bucket, Prefix=prefix):
-                if 'Contents' in page:
-                    files.extend([
-                        obj['Key']
-                        for obj in page['Contents']
-                        if obj['Key'].endswith('.parquet')
-                    ])
-            
-            return files
-        except Exception as e:
-            logger.error(f"Error listing files in {prefix}: {str(e)}")
-            raise
+    return spark
 
-    def read_parquet_from_s3(self, file_key: str) -> pd.DataFrame:
-        """Read a parquet file from S3 into a pandas DataFrame."""
-        try:
-            response = s3.get_object(Bucket=self.source_bucket, Key=file_key)
-            parquet_buffer = io.BytesIO(response['Body'].read())
-            return pd.read_parquet(parquet_buffer)
-        except Exception as e:
-            logger.error(f"Error reading parquet file {file_key}: {str(e)}")
-            raise
+def setup_logging():
+    """Configure logging for the ETL job"""
+    logging.basicConfig(
+        level=logging.INFO,
+        format='%(asctime)s - %(levelname)s - %(message)s'
+    )
+    return logging.getLogger("S3ToRedshiftETL")
 
-    def create_table_if_not_exists(self, df: pd.DataFrame, table_name: str):
-        """Create table in Redshift if it doesn't exist based on DataFrame schema."""
-        type_mapping = {
-            'int64': 'BIGINT',
-            'float64': 'DOUBLE PRECISION',
-            'object': 'VARCHAR(MAX)',
-            'bool': 'BOOLEAN',
-            'datetime64[ns]': 'TIMESTAMP'
-        }
+def get_job_arguments() -> Dict:
+    """Get job arguments passed from Glue job"""
+    args = getResolvedOptions(sys.argv, [
+        'JOB_NAME',
+        'source-bucket',
+        'redshift-database',
+        'redshift-schema',
+        'redshift-workgroup',
+        'redshift-temp-dir'
+    ])
+    return args
 
-        columns = []
-        for col_name, dtype in df.dtypes.items():
-            sql_type = type_mapping.get(str(dtype), 'VARCHAR(MAX)')
-            columns.append(f'"{col_name}" {sql_type}')
-
-        create_table_sql = f"""
-        CREATE TABLE IF NOT EXISTS {self.schema}.{table_name} (
-            {', '.join(columns)}
-        );
+def create_redshift_tables(redshift_properties: Dict, logger: logging.Logger):
+    """Create Redshift tables if they don't exist"""
+    create_table_statements = {
+        'processed_customers': """
+            CREATE TABLE IF NOT EXISTS {schema}.processed_customers (
+                customer_id VARCHAR(32) PRIMARY KEY,
+                customer_name VARCHAR(255),
+                city VARCHAR(100)
+            ) DISTSTYLE KEY DISTKEY(customer_id);
+        """,
+        'processed_products': """
+            CREATE TABLE IF NOT EXISTS {schema}.processed_products (
+                product_id VARCHAR(32) PRIMARY KEY,
+                product_name VARCHAR(255),
+                category VARCHAR(100)
+            ) DISTSTYLE KEY DISTKEY(product_id);
+        """,
+        'processed_dates': """
+            CREATE TABLE IF NOT EXISTS {schema}.processed_dates (
+                date DATE PRIMARY KEY,
+                mmm_yy VARCHAR(10),
+                week_no VARCHAR(10)
+            ) DISTSTYLE ALL;
         """
+    }
 
-        with psycopg2.connect(self.redshift_conn_string) as conn:
-            with conn.cursor() as cur:
-                cur.execute(create_table_sql)
-            conn.commit()
-
-    def copy_to_redshift(self, df: pd.DataFrame, table_name: str):
-        """Copy DataFrame to Redshift using COPY command."""
-        # Create temporary CSV in memory
-        csv_buffer = io.StringIO()
-        df.to_csv(csv_buffer, index=False, header=False)
-        csv_buffer.seek(0)
+    try:
+        conn = pg8000.connect(
+            database=redshift_properties['database'],
+            user="admin",  # Using the admin user from your Terraform config
+            password="Password123!",  # Using the password from your Terraform config
+            host=f"{redshift_properties['workgroup']}.{redshift_properties['region']}.redshift-serverless.amazonaws.com"
+        )
         
-        with psycopg2.connect(self.redshift_conn_string) as conn:
-            with conn.cursor() as cur:
-                # Use COPY command to load data
-                copy_sql = f"""
-                COPY {self.schema}.{table_name}
-                FROM STDIN WITH CSV
-                """
-                cur.copy_expert(sql=copy_sql, file=csv_buffer)
-            conn.commit()
+        cursor = conn.cursor()
+        
+        # Create schema if it doesn't exist
+        cursor.execute(f"CREATE SCHEMA IF NOT EXISTS {redshift_properties['schema']};")
+        
+        # Create tables if they don't exist
+        for table_name, create_statement in create_table_statements.items():
+            formatted_statement = create_statement.format(schema=redshift_properties['schema'])
+            cursor.execute(formatted_statement)
+            logger.info(f"Created or verified table: {table_name}")
+        
+        conn.commit()
+        cursor.close()
+        conn.close()
+        
+    except Exception as e:
+        logger.error(f"Error creating Redshift tables: {str(e)}")
+        raise
 
-    def process_table(self, source_prefix: str, table_name: str) -> None:
-        """Process a single table's data from S3 to Redshift."""
-        try:
-            logger.info(f"Starting processing for table: {table_name}")
-            
-            # List all parquet files for this table
-            parquet_files = self.list_parquet_files(source_prefix)
-            
-            if not parquet_files:
-                logger.warning(f"No parquet files found in {source_prefix}")
-                return
-                
-            # Create table if it doesn't exist using first file
-            first_df = self.read_parquet_from_s3(parquet_files[0])
-            self.create_table_if_not_exists(first_df, table_name)
-            
-            # Process files in batches
-            for parquet_file in parquet_files:
-                logger.info(f"Processing file: {parquet_file}")
-                
-                df = self.read_parquet_from_s3(parquet_file)
-                
-                # Process in chunks to optimize memory usage
-                for i in range(0, len(df), self.batch_size):
-                    chunk = df[i:i + self.batch_size]
-                    self.copy_to_redshift(chunk, table_name)
-                    
-                logger.info(f"Completed processing file: {parquet_file}")
-                
-            logger.info(f"Completed processing table: {table_name}")
-            
-        except Exception as e:
-            logger.error(f"Error processing table {table_name}: {str(e)}")
-            raise
+def read_parquet_data(spark: SparkSession, s3_path: str, logger: logging.Logger):
+    """Read parquet data from S3"""
+    logger.info(f"Reading parquet data from: {s3_path}")
+    try:
+        df = spark.read.parquet(s3_path)
+        logger.info(f"Successfully read {df.count()} records from {s3_path}")
+        return df
+    except Exception as e:
+        logger.error(f"Error reading from {s3_path}: {str(e)}")
+        raise
 
-    def run(self):
-        """Main ETL process."""
-        try:
-            # Define table configurations
-            tables = {
-                'customers': 'processed_customers/',
-                'dates': 'processed_dates/',
-                'products': 'processed_products/'
-            }
-            
-            # Process tables in parallel
-            with ThreadPoolExecutor(max_workers=3) as executor:
-                futures = []
-                for table_name, prefix in tables.items():
-                    futures.append(
-                        executor.submit(self.process_table, prefix, table_name)
-                    )
-                
-                # Wait for all tasks to complete
-                for future in futures:
-                    future.result()
-                    
-            logger.info("ETL process completed successfully")
-            
-        except Exception as e:
-            logger.error(f"ETL process failed: {str(e)}")
-            raise
+def write_to_redshift(
+    df,
+    redshift_table: str,
+    redshift_properties: Dict,
+    temp_s3_dir: str,
+    logger: logging.Logger
+):
+    """Write DataFrame to Redshift"""
+    logger.info(f"Writing data to Redshift table: {redshift_table}")
+    
+    try:
+        df.write \
+            .format("redshift") \
+            .option("url", f"jdbc:redshift:iam://{redshift_properties['workgroup']}/{redshift_properties['database']}") \
+            .option("dbtable", f"{redshift_properties['schema']}.{redshift_table}") \
+            .option("tempdir", temp_s3_dir) \
+            .option("aws_iam_role", "auto") \
+            .mode("append") \
+            .save()
+        
+        logger.info(f"Successfully wrote data to {redshift_table}")
+    except Exception as e:
+        logger.error(f"Error writing to Redshift table {redshift_table}: {str(e)}")
+        raise
 
 def main():
-    etl = S3ToRedshiftETL()
-    etl.run()
+    # Initialize Spark and logging
+    spark = create_spark_session()
+    logger = setup_logging()
+    glueContext = GlueContext(spark.sparkContext)
+    job = Job(glueContext)
+    
+    # Get job arguments
+    args = get_job_arguments()
+    job.init(args['JOB_NAME'])
+    
+    # Configure Redshift properties
+    redshift_properties = {
+        'database': args['redshift-database'],
+        'schema': args['redshift-schema'],
+        'workgroup': args['redshift-workgroup'],
+        'region': 'us-east-1'  # From your Terraform configuration
+    }
+    
+    # Create Redshift tables if they don't exist
+    create_redshift_tables(redshift_properties, logger)
+    
+    # Define S3 paths
+    source_bucket = args['source-bucket']
+    temp_dir = args['redshift-temp-dir']
+    
+    # Define table mappings
+    table_mappings = {
+        'processed_customers': f"s3://{source_bucket}/processed_customers/",
+        'processed_dates': f"s3://{source_bucket}/processed_dates/",
+        'processed_products': f"s3://{source_bucket}/processed_products/"
+    }
+    
+    # Process each table
+    for table_name, s3_path in table_mappings.items():
+        try:
+            logger.info(f"Processing table: {table_name}")
+            
+            # Read parquet data
+            df = read_parquet_data(spark, s3_path, logger)
+            
+            # Write to Redshift
+            write_to_redshift(
+                df=df,
+                redshift_table=table_name,
+                redshift_properties=redshift_properties,
+                temp_s3_dir=temp_dir,
+                logger=logger
+            )
+            
+        except Exception as e:
+            logger.error(f"Failed to process table {table_name}: {str(e)}")
+            raise
+    
+    logger.info("ETL job completed successfully")
+    job.commit()
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

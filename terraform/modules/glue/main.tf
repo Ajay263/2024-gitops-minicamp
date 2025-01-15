@@ -60,32 +60,36 @@ resource "aws_glue_job" "etl_job" {
   }
 }
 
+
 resource "aws_glue_job" "s3_to_redshift_job" {
-  name         = "topdevs-${var.environment}-s3-to-redshift-job"
-  role_arn     = var.glue_role_arn
-  glue_version = "4.0"  # Updated to latest version
-  timeout      = 2880
-  max_retries  = 1
+  name              = "topdevs-${var.environment}-s3-to-redshift-job"
+  role_arn          = var.glue_role_arn
+  glue_version      = "4.0"
+  worker_type       = "G.1X"  
+  number_of_workers = 2
+  timeout           = 2880
+  max_retries       = 1
 
   command {
-    name            = "pythonshell"
-    python_version  = "3"  # Specifying Python version explicitly
-    script_location = "s3://${var.code_bucket}/scripts/s3_to_redshift.py"
+    name            = "glueetl"
+    python_version  = "3"
+    script_location = "s3://${var.code_bucket}/s3_to_redshift.py"
   }
 
   default_arguments = {
+    "--enable-auto-scaling"              = "true"
     "--enable-continuous-cloudwatch-log" = "true"
-    "--enable-metrics"                   = "true"
-    "--job-language"                     = "python"
-    "--source-bucket"                    = var.source_bucket
-    "--redshift-database"                = var.redshift_database
-    "--redshift-schema"                  = var.redshift_schema
-    "--redshift-workgroup"               = var.redshift_workgroup_name
-    "--redshift-temp-dir"                = "s3://${var.code_bucket}/temp/"
-    "--TempDir"                          = "s3://${var.code_bucket}/temporary/"
-    "--additional-python-modules"         = "pyarrow==16.0.0,awswrangler==3.5.1,pandas==2.0.3,numpy==1.24.3,psycopg2-binary==2.9.9"
-    # Added necessary Python packages with specific versions
-    "--python-modules-installer-option"   = "--prefer-binary"  # This helps with binary package installations
+    "--enable-metrics"                  = "true"
+    "--job-language"                    = "python"
+    "--source-bucket"                   = var.source_bucket
+    "--redshift-database"               = var.redshift_database
+    "--redshift-schema"                 = var.redshift_schema
+    "--redshift-workgroup"              = var.redshift_workgroup_name
+    "--redshift-temp-dir"               = "s3://${var.code_bucket}/temp/"
+    "--TempDir"                         = "s3://${var.code_bucket}/temporary/"
+    "--enable-spark-ui"                 = "true"
+    "--spark-event-logs-path"           = "s3://${var.code_bucket}/spark-logs/"
+    "--additional-python-modules" = "pg8000==1.29.1"
   }
 
   execution_property {
@@ -97,42 +101,3 @@ resource "aws_glue_job" "s3_to_redshift_job" {
     Service     = "glue"
   }
 }
-# resource "aws_glue_job" "s3_to_redshift_job" {
-#   name              = "topdevs-${var.environment}-s3-to-redshift-job"
-#   role_arn          = var.glue_role_arn
-#   glue_version      = "4.0"
-#   worker_type       = "G.1X"  
-#   number_of_workers = 2
-#   timeout           = 2880
-#   max_retries       = 1
-
-#   command {
-#     name            = "glueetl"
-#     python_version  = "3"
-#     script_location = "s3://${var.code_bucket}/s3_to_redshift.py"
-#   }
-
-#   default_arguments = {
-#     "--enable-auto-scaling"              = "true"
-#     "--enable-continuous-cloudwatch-log" = "true"
-#     "--enable-metrics"                  = "true"
-#     "--job-language"                    = "python"
-#     "--source-bucket"                   = var.source_bucket
-#     "--redshift-database"               = var.redshift_database
-#     "--redshift-schema"                 = var.redshift_schema
-#     "--redshift-workgroup"              = var.redshift_workgroup_name
-#     "--redshift-temp-dir"               = "s3://${var.code_bucket}/temp/"
-#     "--TempDir"                         = "s3://${var.code_bucket}/temporary/"
-#     "--enable-spark-ui"                 = "true"
-#     "--spark-event-logs-path"           = "s3://${var.code_bucket}/spark-logs/"
-#   }
-
-#   execution_property {
-#     max_concurrent_runs = 1
-#   }
-
-#   tags = {
-#     Environment = var.environment
-#     Service     = "glue"
-#   }
-# }
