@@ -13,32 +13,53 @@ from psycopg2 import sql
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Get job parameters - simplified version without getResolvedOptions
+# Environment configuration
+ENVIRONMENT = 'prod'  # Based on your terraform config
+
+# Get job parameters
 args = {
-    'source-bucket': 'your-bucket-name',  # Replace with your values
-    'redshift-database': 'your-database',
-    'redshift-schema': 'your-schema',
-    'redshift-workgroup': 'your-workgroup',
-    'redshift-host': 'your-redshift-host',  # Add your Redshift connection details
-    'redshift-port': '5439',
-    'redshift-user': 'your-username',
-    'redshift-password': 'your-password'
+    'source-bucket': f'nexabrands-{ENVIRONMENT}-source',  # Matches your S3 bucket naming
+    'target-bucket': f'nexabrands-{ENVIRONMENT}-target',
+    'redshift-database': 'nexabrands_datawarehouse',  # From your Redshift config
+    'redshift-schema': 'public',  # Default schema, adjust if needed
+    'redshift-workgroup': 'nexabrands-redshift-workgroup',
+    'redshift-namespace': 'nexabrands-redshift-namespace',
+    'redshift-username': 'admin',
+    'redshift-password': 'Password123!'  # In production, use AWS Secrets Manager
 }
 
 # Initialize AWS clients
-s3 = boto3.client('s3')
-redshift_serverless = boto3.client('redshift-serverless')
+s3 = boto3.client('s3', region_name='us-east-1')
+redshift_serverless = boto3.client('redshift-serverless', region_name='us-east-1')
 
 class S3ToRedshiftETL:
     def __init__(self):
         self.source_bucket = args['source-bucket']
+        self.target_bucket = args['target-bucket']
         self.database = args['redshift-database']
         self.schema = args['redshift-schema']
         self.workgroup = args['redshift-workgroup']
+        self.namespace = args['redshift-namespace']
         self.batch_size = 100000
         
-        # Redshift connection settings
-        self.redshift_conn_string = f"host={args['redshift-host']} dbname={self.database} user={args['redshift-user']} password={args['redshift-password']} port={args['redshift-port']}"
+        # Get Redshift endpoint
+        try:
+            workgroup_response = redshift_serverless.get_workgroup(
+                workgroupName=self.workgroup
+            )
+            self.redshift_endpoint = workgroup_response['workgroup']['endpoint']['address']
+            
+            # Construct Redshift connection string
+            self.redshift_conn_string = (
+                f"host={self.redshift_endpoint} "
+                f"dbname={self.database} "
+                f"user={args['redshift-username']} "
+                f"password={args['redshift-password']} "
+                f"port=5439"
+            )
+        except Exception as e:
+            logger.error(f"Error getting Redshift endpoint: {str(e)}")
+            raise
     
     def list_parquet_files(self, prefix: str) -> List[str]:
         """List all parquet files in the given S3 prefix."""
@@ -151,3 +172,33 @@ class S3ToRedshiftETL:
         """Main ETL process."""
         try:
             # Define table configurations
+            tables = {
+                'customers': 'processed_customers/',
+                'dates': 'processed_dates/',
+                'products': 'processed_products/'
+            }
+            
+            # Process tables in parallel
+            with ThreadPoolExecutor(max_workers=3) as executor:
+                futures = []
+                for table_name, prefix in tables.items():
+                    futures.append(
+                        executor.submit(self.process_table, prefix, table_name)
+                    )
+                
+                # Wait for all tasks to complete
+                for future in futures:
+                    future.result()
+                    
+            logger.info("ETL process completed successfully")
+            
+        except Exception as e:
+            logger.error(f"ETL process failed: {str(e)}")
+            raise
+
+def main():
+    etl = S3ToRedshiftETL()
+    etl.run()
+
+if __name__ == '__main__':
+    main()
