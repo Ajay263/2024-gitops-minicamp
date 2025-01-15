@@ -63,13 +63,13 @@ resource "aws_glue_job" "etl_job" {
 resource "aws_glue_job" "s3_to_redshift_job" {
   name         = "topdevs-${var.environment}-s3-to-redshift-job"
   role_arn     = var.glue_role_arn
-  glue_version = "1.0"
+  glue_version = "4.0"  # Updated to latest version
   timeout      = 2880
   max_retries  = 1
 
   command {
     name            = "pythonshell"
-    python_version  = "3"
+    python_version  = "3"  # Specifying Python version explicitly
     script_location = "s3://${var.code_bucket}/scripts/s3_to_redshift.py"
   }
 
@@ -83,7 +83,9 @@ resource "aws_glue_job" "s3_to_redshift_job" {
     "--redshift-workgroup"               = var.redshift_workgroup_name
     "--redshift-temp-dir"                = "s3://${var.code_bucket}/temp/"
     "--TempDir"                          = "s3://${var.code_bucket}/temporary/"
-    "--additional-python-modules"         = "awswrangler==3.5.1,pandas==2.0.3,numpy==1.24.3"
+    "--additional-python-modules"         = "pyarrow==16.0.0,awswrangler==3.5.1,pandas==2.0.3,numpy==1.24.3,psycopg2-binary==2.9.9"
+    # Added necessary Python packages with specific versions
+    "--python-modules-installer-option"   = "--prefer-binary"  # This helps with binary package installations
   }
 
   execution_property {
@@ -95,8 +97,6 @@ resource "aws_glue_job" "s3_to_redshift_job" {
     Service     = "glue"
   }
 }
-
-
 # resource "aws_glue_job" "s3_to_redshift_job" {
 #   name              = "topdevs-${var.environment}-s3-to-redshift-job"
 #   role_arn          = var.glue_role_arn
