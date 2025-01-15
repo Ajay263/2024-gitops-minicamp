@@ -64,8 +64,7 @@ jobs:
                 "--enable-metrics": "true",
                 "--source-path": "s3://'${SOURCE_BUCKET}'",
                 "--destination-path": "s3://'${TARGET_BUCKET}'",
-                "--job-name": "topdevs-'${ENVIRONMENT}'-etl-job",
-                "--additional-python-modules": "pyarrow==16.0.0"
+                "--job-name": "topdevs-'${ENVIRONMENT}'-etl-job"
               }
             }'
         env:
