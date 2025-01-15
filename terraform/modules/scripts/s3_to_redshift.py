@@ -1,12 +1,11 @@
 import sys
+from awsglue.transforms import *
 from awsglue.utils import getResolvedOptions
+from pyspark.context import SparkContext
 from awsglue.context import GlueContext
 from awsglue.job import Job
-from awsglue.dynamicframe import DynamicFrame
-from pyspark.context import SparkContext
 import logging
 from typing import Dict
-import pg8000
 
 def setup_logging():
     """Configure logging for the ETL job"""
@@ -20,106 +19,74 @@ def get_job_arguments() -> Dict:
     """Get job arguments passed from Glue job"""
     args = getResolvedOptions(sys.argv, [
         'JOB_NAME',
-        'source-bucket',
-        'redshift-database',
-        'redshift-schema',
-        'redshift-workgroup',
-        'redshift-temp-dir'
+        'source_bucket',
+        'redshift_connection',
+        'redshift_database',
+        'redshift_schema',
+        'redshift_temp_dir'
     ])
     return args
 
-def create_redshift_tables(redshift_properties: Dict, logger: logging.Logger):
-    """Create Redshift tables if they don't exist"""
-    create_table_statements = {
-        'processed_customers': """
-            CREATE TABLE IF NOT EXISTS {schema}.processed_customers (
-                customer_id VARCHAR(32) PRIMARY KEY,
-                customer_name VARCHAR(255),
-                city VARCHAR(100)
-            ) DISTSTYLE KEY DISTKEY(customer_id);
-        """,
-        'processed_products': """
-            CREATE TABLE IF NOT EXISTS {schema}.processed_products (
-                product_id VARCHAR(32) PRIMARY KEY,
-                product_name VARCHAR(255),
-                category VARCHAR(100)
-            ) DISTSTYLE KEY DISTKEY(product_id);
-        """,
-        'processed_dates': """
-            CREATE TABLE IF NOT EXISTS {schema}.processed_dates (
-                date DATE PRIMARY KEY,
-                mmm_yy VARCHAR(10),
-                week_no VARCHAR(10)
-            ) DISTSTYLE ALL;
-        """
-    }
-
+def read_source_data(glueContext: GlueContext, source_path: str, format: str, logger: logging.Logger, format_options=None):
+    """Read data from S3 using Glue Dynamic Frame"""
+    logger.info(f"Reading {format} data from: {source_path}")
+    
     try:
-        conn = pg8000.connect(
-            database=redshift_properties['database'],
-            user="admin",
-            password="Password123!",
-            host=f"{redshift_properties['workgroup']}.{redshift_properties['region']}.redshift-serverless.amazonaws.com"
+        connection_options = {
+            "paths": [source_path]
+        }
+        if format_options:
+            connection_options.update(format_options)
+            
+        dynamic_frame = glueContext.create_dynamic_frame.from_options(
+            connection_type="s3",
+            connection_options=connection_options,
+            format=format,
+            transformation_ctx=f"source_data_{format}"
         )
         
-        cursor = conn.cursor()
-        
-        # Create schema if it doesn't exist
-        cursor.execute(f"CREATE SCHEMA IF NOT EXISTS {redshift_properties['schema']};")
-        
-        # Create tables if they don't exist
-        for table_name, create_statement in create_table_statements.items():
-            formatted_statement = create_statement.format(schema=redshift_properties['schema'])
-            cursor.execute(formatted_statement)
-            logger.info(f"Created or verified table: {table_name}")
-        
-        conn.commit()
-        cursor.close()
-        conn.close()
-        
+        return dynamic_frame
     except Exception as e:
-        logger.error(f"Error creating Redshift tables: {str(e)}")
-        raise
-
-def read_parquet_data(glueContext: GlueContext, s3_path: str, logger: logging.Logger):
-    """Read parquet data from S3"""
-    logger.info(f"Reading parquet data from: {s3_path}")
-    try:
-        # Read using spark session directly
-        spark = glueContext.spark_session
-        df = spark.read.parquet(s3_path)
-        count = df.count()
-        logger.info(f"Successfully read {count} records from {s3_path}")
-        return df
-    except Exception as e:
-        logger.error(f"Error reading from {s3_path}: {str(e)}")
+        logger.error(f"Error reading from {source_path}: {str(e)}")
         raise
 
 def write_to_redshift(
-    df,
-    redshift_table: str,
-    redshift_properties: Dict,
-    temp_s3_dir: str,
+    glueContext: GlueContext,
+    dynamic_frame,
+    connection_name: str,
+    table_name: str,
+    database: str,
+    redshift_tmp_dir: str,
+    transformation_ctx: str,
     logger: logging.Logger
 ):
-    """Write DataFrame to Redshift"""
-    logger.info(f"Writing data to Redshift table: {redshift_table}")
+    """Write Dynamic Frame to Redshift"""
+    logger.info(f"Writing data to Redshift table: {table_name}")
     
     try:
-        # Using spark native JDBC write
-        df.write \
-            .format("jdbc") \
-            .option("url", f"jdbc:redshift:iam://{redshift_properties['workgroup']}/{redshift_properties['database']}") \
-            .option("dbtable", f"{redshift_properties['schema']}.{redshift_table}") \
-            .option("tempdir", temp_s3_dir) \
-            .option("aws_iam_role", "auto") \
-            .mode("append") \
-            .save()
-        
-        logger.info(f"Successfully wrote data to {redshift_table}")
+        sink_dyf = glueContext.write_dynamic_frame.from_jdbc_conf(
+            frame=dynamic_frame,
+            catalog_connection=connection_name,
+            connection_options={
+                "dbtable": f"{table_name}",
+                "database": database
+            },
+            redshift_tmp_dir=redshift_tmp_dir,
+            transformation_ctx=transformation_ctx
+        )
+        logger.info(f"Successfully wrote data to {table_name}")
+        return sink_dyf
     except Exception as e:
-        logger.error(f"Error writing to Redshift table {redshift_table}: {str(e)}")
+        logger.error(f"Error writing to Redshift table {table_name}: {str(e)}")
         raise
+
+def apply_mappings(dynamic_frame, mapping_list, transformation_ctx: str):
+    """Apply column mappings to dynamic frame"""
+    return ApplyMapping.apply(
+        frame=dynamic_frame,
+        mappings=mapping_list,
+        transformation_ctx=transformation_ctx
+    )
 
 def main():
     # Initialize Glue context
@@ -133,42 +100,57 @@ def main():
     args = get_job_arguments()
     job.init(args['JOB_NAME'])
     
-    # Configure Redshift properties
-    redshift_properties = {
-        'database': args['redshift-database'],
-        'schema': args['redshift-schema'],
-        'workgroup': args['redshift-workgroup'],
-        'region': 'us-east-1'
-    }
-    
-    # Create Redshift tables if they don't exist
-    create_redshift_tables(redshift_properties, logger)
-    
-    # Define S3 paths
-    source_bucket = args['source-bucket']
-    temp_dir = args['redshift-temp-dir']
-    
-    # Define table mappings
-    table_mappings = {
-        'processed_customers': f"s3://{source_bucket}/processed_customers/",
-        'processed_dates': f"s3://{source_bucket}/processed_dates/",
-        'processed_products': f"s3://{source_bucket}/processed_products/"
+    # Configure table mappings and their data types
+    table_configs = {
+        'customers': {
+            'source_path': f"s3://{args['source_bucket']}/customers/",
+            'format': 'parquet',
+            'mappings': [
+                ("customer_id", "string", "customer_id", "varchar"),
+                ("customer_name", "string", "customer_name", "varchar"),
+                ("city", "string", "city", "varchar")
+            ]
+        },
+        'products': {
+            'source_path': f"s3://{args['source_bucket']}/products/",
+            'format': 'parquet',
+            'mappings': [
+                ("product_id", "string", "product_id", "varchar"),
+                ("product_name", "string", "product_name", "varchar"),
+                ("category", "string", "category", "varchar")
+            ]
+        }
     }
     
     # Process each table
-    for table_name, s3_path in table_mappings.items():
+    for table_name, config in table_configs.items():
         try:
             logger.info(f"Processing table: {table_name}")
             
-            # Read parquet data
-            df = read_parquet_data(glueContext, s3_path, logger)
+            # Read source data
+            source_dyf = read_source_data(
+                glueContext,
+                config['source_path'],
+                config['format'],
+                logger
+            )
+            
+            # Apply mappings
+            mapped_dyf = apply_mappings(
+                source_dyf,
+                config['mappings'],
+                f"apply_mapping_{table_name}"
+            )
             
             # Write to Redshift
             write_to_redshift(
-                df=df,
-                redshift_table=table_name,
-                redshift_properties=redshift_properties,
-                temp_s3_dir=temp_dir,
+                glueContext=glueContext,
+                dynamic_frame=mapped_dyf,
+                connection_name=args['redshift_connection'],
+                table_name=f"{args['redshift_schema']}.{table_name}",
+                database=args['redshift_database'],
+                redshift_tmp_dir=args['redshift_temp_dir'],
+                transformation_ctx=f"write_{table_name}",
                 logger=logger
             )
             
