@@ -1,8 +1,8 @@
 import sys
-from awsglue.transforms import *
 from awsglue.utils import getResolvedOptions
 from awsglue.context import GlueContext
 from awsglue.job import Job
+from awsglue.dynamicframe import DynamicFrame
 from pyspark.context import SparkContext
 import logging
 from typing import Dict
@@ -82,45 +82,39 @@ def create_redshift_tables(redshift_properties: Dict, logger: logging.Logger):
         raise
 
 def read_parquet_data(glueContext: GlueContext, s3_path: str, logger: logging.Logger):
-    """Read parquet data from S3 using Glue DynamicFrame"""
+    """Read parquet data from S3"""
     logger.info(f"Reading parquet data from: {s3_path}")
     try:
-        dynamic_frame = glueContext.create_dynamic_frame.from_options(
-            connection_type="s3",
-            connection_options={"paths": [s3_path]},
-            format="parquet"
-        )
-        
-        count = dynamic_frame.count()
+        # Read using spark session directly
+        spark = glueContext.spark_session
+        df = spark.read.parquet(s3_path)
+        count = df.count()
         logger.info(f"Successfully read {count} records from {s3_path}")
-        return dynamic_frame.toDF()
+        return df
     except Exception as e:
         logger.error(f"Error reading from {s3_path}: {str(e)}")
         raise
 
 def write_to_redshift(
-    glueContext: GlueContext,
     df,
     redshift_table: str,
     redshift_properties: Dict,
     temp_s3_dir: str,
     logger: logging.Logger
 ):
-    """Write DataFrame to Redshift using Glue connection"""
+    """Write DataFrame to Redshift"""
     logger.info(f"Writing data to Redshift table: {redshift_table}")
     
     try:
-        glueContext.write_dynamic_frame.from_options(
-            frame=DynamicFrame.fromDF(df, glueContext, redshift_table),
-            connection_type="redshift",
-            connection_options={
-                "url": f"jdbc:redshift:iam://{redshift_properties['workgroup']}/{redshift_properties['database']}",
-                "dbtable": f"{redshift_properties['schema']}.{redshift_table}",
-                "tempdir": temp_s3_dir,
-                "aws_iam_role": "auto"
-            },
-            transformation_ctx=f"write_{redshift_table}"
-        )
+        # Using spark native JDBC write
+        df.write \
+            .format("jdbc") \
+            .option("url", f"jdbc:redshift:iam://{redshift_properties['workgroup']}/{redshift_properties['database']}") \
+            .option("dbtable", f"{redshift_properties['schema']}.{redshift_table}") \
+            .option("tempdir", temp_s3_dir) \
+            .option("aws_iam_role", "auto") \
+            .mode("append") \
+            .save()
         
         logger.info(f"Successfully wrote data to {redshift_table}")
     except Exception as e:
@@ -171,7 +165,6 @@ def main():
             
             # Write to Redshift
             write_to_redshift(
-                glueContext=glueContext,
                 df=df,
                 redshift_table=table_name,
                 redshift_properties=redshift_properties,
