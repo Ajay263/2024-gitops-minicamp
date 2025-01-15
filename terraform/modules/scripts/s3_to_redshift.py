@@ -1,22 +1,12 @@
-from pyspark.sql import SparkSession
 import sys
+from awsglue.transforms import *
 from awsglue.utils import getResolvedOptions
 from awsglue.context import GlueContext
 from awsglue.job import Job
+from pyspark.context import SparkContext
 import logging
-from typing import List, Dict
+from typing import Dict
 import pg8000
-
-def create_spark_session(app_name: str = "S3ToRedshiftETL") -> SparkSession:
-    """
-    Create a Spark session with necessary configurations for Redshift connectivity
-    """
-    spark = SparkSession.builder \
-        .appName(app_name) \
-        .config("spark.sql.legacy.timeParserPolicy", "LEGACY") \
-        .getOrCreate()
-    
-    return spark
 
 def setup_logging():
     """Configure logging for the ETL job"""
@@ -67,8 +57,8 @@ def create_redshift_tables(redshift_properties: Dict, logger: logging.Logger):
     try:
         conn = pg8000.connect(
             database=redshift_properties['database'],
-            user="admin",  # Using the admin user from your Terraform config
-            password="Password123!",  # Using the password from your Terraform config
+            user="admin",
+            password="Password123!",
             host=f"{redshift_properties['workgroup']}.{redshift_properties['region']}.redshift-serverless.amazonaws.com"
         )
         
@@ -91,36 +81,46 @@ def create_redshift_tables(redshift_properties: Dict, logger: logging.Logger):
         logger.error(f"Error creating Redshift tables: {str(e)}")
         raise
 
-def read_parquet_data(spark: SparkSession, s3_path: str, logger: logging.Logger):
-    """Read parquet data from S3"""
+def read_parquet_data(glueContext: GlueContext, s3_path: str, logger: logging.Logger):
+    """Read parquet data from S3 using Glue DynamicFrame"""
     logger.info(f"Reading parquet data from: {s3_path}")
     try:
-        df = spark.read.parquet(s3_path)
-        logger.info(f"Successfully read {df.count()} records from {s3_path}")
-        return df
+        dynamic_frame = glueContext.create_dynamic_frame.from_options(
+            connection_type="s3",
+            connection_options={"paths": [s3_path]},
+            format="parquet"
+        )
+        
+        count = dynamic_frame.count()
+        logger.info(f"Successfully read {count} records from {s3_path}")
+        return dynamic_frame.toDF()
     except Exception as e:
         logger.error(f"Error reading from {s3_path}: {str(e)}")
         raise
 
 def write_to_redshift(
+    glueContext: GlueContext,
     df,
     redshift_table: str,
     redshift_properties: Dict,
     temp_s3_dir: str,
     logger: logging.Logger
 ):
-    """Write DataFrame to Redshift"""
+    """Write DataFrame to Redshift using Glue connection"""
     logger.info(f"Writing data to Redshift table: {redshift_table}")
     
     try:
-        df.write \
-            .format("redshift") \
-            .option("url", f"jdbc:redshift:iam://{redshift_properties['workgroup']}/{redshift_properties['database']}") \
-            .option("dbtable", f"{redshift_properties['schema']}.{redshift_table}") \
-            .option("tempdir", temp_s3_dir) \
-            .option("aws_iam_role", "auto") \
-            .mode("append") \
-            .save()
+        glueContext.write_dynamic_frame.from_options(
+            frame=DynamicFrame.fromDF(df, glueContext, redshift_table),
+            connection_type="redshift",
+            connection_options={
+                "url": f"jdbc:redshift:iam://{redshift_properties['workgroup']}/{redshift_properties['database']}",
+                "dbtable": f"{redshift_properties['schema']}.{redshift_table}",
+                "tempdir": temp_s3_dir,
+                "aws_iam_role": "auto"
+            },
+            transformation_ctx=f"write_{redshift_table}"
+        )
         
         logger.info(f"Successfully wrote data to {redshift_table}")
     except Exception as e:
@@ -128,11 +128,12 @@ def write_to_redshift(
         raise
 
 def main():
-    # Initialize Spark and logging
-    spark = create_spark_session()
-    logger = setup_logging()
-    glueContext = GlueContext(spark.sparkContext)
+    # Initialize Glue context
+    sc = SparkContext()
+    glueContext = GlueContext(sc)
+    spark = glueContext.spark_session
     job = Job(glueContext)
+    logger = setup_logging()
     
     # Get job arguments
     args = get_job_arguments()
@@ -143,7 +144,7 @@ def main():
         'database': args['redshift-database'],
         'schema': args['redshift-schema'],
         'workgroup': args['redshift-workgroup'],
-        'region': 'us-east-1'  # From your Terraform configuration
+        'region': 'us-east-1'
     }
     
     # Create Redshift tables if they don't exist
@@ -166,10 +167,11 @@ def main():
             logger.info(f"Processing table: {table_name}")
             
             # Read parquet data
-            df = read_parquet_data(spark, s3_path, logger)
+            df = read_parquet_data(glueContext, s3_path, logger)
             
             # Write to Redshift
             write_to_redshift(
+                glueContext=glueContext,
                 df=df,
                 redshift_table=table_name,
                 redshift_properties=redshift_properties,
