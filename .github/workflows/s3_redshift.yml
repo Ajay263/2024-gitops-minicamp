@@ -1,4 +1,4 @@
-name: ETL Glue Job Deployment
+name: S3 to Redshift Glue Job Deployment
 
 on:
   workflow_dispatch:
