@@ -2,9 +2,9 @@
 
 aws_region    = "us-east-1"
 environment   = "prod"
-source_bucket = "nexabrands-source"
-target_bucket = "nexabrands-target"
-code_bucket   = "nexabrands-code"
+source_bucket = "source"
+target_bucket = "target"
+code_bucket   = "code"
 
 app_name = "nexabrands"
 
