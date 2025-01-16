@@ -1,5 +1,8 @@
+# variables.tf
 
-# variables.tf (root)
+########################
+## AWS - Variables ##
+########################
 variable "aws_region" {
   description = "AWS region to deploy resources"
   type        = string
@@ -10,28 +13,41 @@ variable "environment" {
   description = "Environment (dev/staging/prod)"
   type        = string
 }
+
+########################
+## S3 - Variables ##
+########################
 variable "source_bucket" {
   description = "Name of the source data bucket"
   type        = string
+
 }
 
 variable "target_bucket" {
   description = "Name of the target data bucket"
   type        = string
+
 }
 
 variable "code_bucket" {
   description = "Name of the code bucket"
   type        = string
+
 }
 
-# variables.tf
-#############################
+############################# 
 ## Application - Variables ##
 #############################
 variable "app_name" {
   type        = string
   description = "Application name"
+  default     = "nexabrands"
+}
+
+variable "project_name" {
+  description = "Name of the project"
+  type        = string
+  default     = "nexabrands"
 }
 
 #########################
@@ -40,21 +56,25 @@ variable "app_name" {
 variable "redshift_serverless_vpc_cidr" {
   type        = string
   description = "VPC IPv4 CIDR"
+  default     = "10.0.0.0/16"
 }
 
 variable "redshift_serverless_subnet_1_cidr" {
   type        = string
   description = "IPv4 CIDR for Redshift subnet 1"
+  default     = "10.0.1.0/24"
 }
 
 variable "redshift_serverless_subnet_2_cidr" {
   type        = string
   description = "IPv4 CIDR for Redshift subnet 2"
+  default     = "10.0.2.0/24"
 }
 
 variable "redshift_serverless_subnet_3_cidr" {
   type        = string
   description = "IPv4 CIDR for Redshift subnet 3"
+  default     = "10.0.3.0/24"
 }
 
 #####################################
@@ -63,16 +83,19 @@ variable "redshift_serverless_subnet_3_cidr" {
 variable "redshift_serverless_namespace_name" {
   type        = string
   description = "Redshift Serverless Namespace Name"
+  default     = "nexabrands-redshift-namespace"
 }
 
 variable "redshift_serverless_database_name" {
   type        = string
   description = "Redshift Serverless Database Name"
+  default     = "nexabrands_datawarehouse"
 }
 
 variable "redshift_serverless_admin_username" {
   type        = string
   description = "Redshift Serverless Admin Username"
+  sensitive   = true
 }
 
 variable "redshift_serverless_admin_password" {
@@ -84,12 +107,13 @@ variable "redshift_serverless_admin_password" {
 variable "redshift_serverless_workgroup_name" {
   type        = string
   description = "Redshift Serverless Workgroup Name"
+  default     = "nexabrands-redshift-workgroup"
 }
 
 variable "redshift_serverless_base_capacity" {
   type        = number
-  description = "Redshift Serverless Base Capacity"
-  default     = 32 // 32 RPUs to 512 RPUs in units of 8 (32,40,48...512)
+  description = "Redshift Serverless Base Capacity (32-512 RPUs in units of 8)"
+  default     = 32
 }
 
 variable "redshift_serverless_publicly_accessible" {
@@ -98,18 +122,24 @@ variable "redshift_serverless_publicly_accessible" {
   default     = false
 }
 
-
+#######################
+## EC2 - Variables ##
+#######################
 variable "ami_id" {
   type        = string
   description = "ID of the AMI to use for the EC2 instance"
+  default     = "ami-0e2c8caa4b6378d8c"
 }
 
 variable "instance_type" {
   type        = string
   description = "Type of EC2 instance"
+  default     = "t3.large"
 }
 
-variable "project_name" {
-  description = "Name of the project"
+variable "public_key" {
   type        = string
+  description = "Public SSH key for EC2 instance access"
+  sensitive   = true
 }
+

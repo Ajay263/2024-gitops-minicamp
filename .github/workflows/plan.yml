@@ -1,3 +1,4 @@
+
 name: 'Terraform Plan'
 
 on:
@@ -25,6 +26,7 @@ jobs:
         working-directory: ./terraform
     env:
       GH_TOKEN: ${{ github.token }}
+      TF_VAR_public_key: ${{ secrets.EC2_SSH_PUBLIC_KEY }}
 
     steps:
     # Checkout the repository to the GitHub Actions runner

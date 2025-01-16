@@ -1,3 +1,4 @@
+# main.tf
 provider "aws" {
   region = var.aws_region
 }
@@ -44,10 +45,12 @@ module "vpc" {
   redshift_serverless_subnet_2_cidr = var.redshift_serverless_subnet_2_cidr
   redshift_serverless_subnet_3_cidr = var.redshift_serverless_subnet_3_cidr
   app_name                          = var.app_name
+  public_key                        = var.public_key
 }
 
 module "glue" {
-  source        = "./modules/glue"
+  source = "./modules/glue"
+
   environment   = var.environment
   source_bucket = module.s3.source_bucket_id
   target_bucket = module.s3.target_bucket_id
@@ -86,8 +89,9 @@ module "ec2" {
   ami_id                    = var.ami_id
   instance_type             = var.instance_type
   vpc_id                    = module.vpc.vpc_id
-  subnet_id                 = module.vpc.subnet_ids[0]
+  subnet_id                 = module.vpc.public_subnet_id
   ec2_instance_profile_name = module.iam.ec2_instance_profile_name
+  public_key                = var.public_key
 
   depends_on = [module.vpc, module.iam]
 }
