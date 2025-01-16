@@ -244,6 +244,11 @@ resource "aws_iam_role_policy" "ec2_policy" {
           "logs:PutLogEvents"
         ]
         Resource = ["arn:aws:logs:*:*:*"]
+      },
+      {
+        Effect = "Allow"
+        Action = "iam:PassRole"
+        Resource = aws_iam_role.glue_service_role.arn
       }
     ]
   })
