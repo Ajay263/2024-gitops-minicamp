@@ -1,4 +1,5 @@
 # Modified EC2 instance
+# EC2 instance with single root volume
 resource "aws_instance" "rag_cs_instance" {
   ami                         = var.ami_id
   instance_type              = var.instance_type
@@ -8,6 +9,15 @@ resource "aws_instance" "rag_cs_instance" {
   associate_public_ip_address = true
   key_name                   = aws_key_pair.ec2_key_pair.key_name
   user_data                  = base64encode(file("${path.module}/install_docker.sh"))
+
+  root_block_device {
+    volume_type = "gp3"
+    volume_size = 80
+    encrypted   = true
+    tags = {
+      Name = "${var.project_name}-root-volume"
+    }
+  }
 
   tags = {
     Name = "${var.project_name}-RAG-CS-Instance"
