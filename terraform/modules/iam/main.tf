@@ -197,6 +197,7 @@ resource "aws_iam_instance_profile" "ec2_profile" {
 }
 
 # EC2 Policy for S3, Redshift, and Glue access
+# EC2 Policy for S3, Redshift, and Glue access
 resource "aws_iam_role_policy" "ec2_policy" {
   name = "topdevs-${var.environment}-ec2-policy"
   role = aws_iam_role.ec2_role.id
@@ -224,7 +225,31 @@ resource "aws_iam_role_policy" "ec2_policy" {
       {
         Effect = "Allow"
         Action = [
-          "glue:*"
+          "glue:StartCrawler",
+          "glue:StopCrawler",
+          "glue:GetCrawler",
+          "glue:GetCrawlers",
+          "glue:UpdateCrawler",
+          "glue:DeleteCrawler",
+          "glue:CreateCrawler",
+          "glue:ListCrawlers",
+          "glue:StartJobRun",
+          "glue:GetJobRun",
+          "glue:GetJobRuns",
+          "glue:BatchStopJobRun",
+          "glue:GetJob",
+          "glue:GetJobs",
+          "glue:ListJobs",
+          "glue:BatchGetJobs",
+          "glue:UpdateJob",
+          "glue:GetTable",
+          "glue:GetTables",
+          "glue:GetDatabase",
+          "glue:GetDatabases",
+          "glue:CreateJob",
+          "glue:DeleteJob",
+          "glue:PutResourcePolicy",
+          "glue:GetResourcePolicy"
         ]
         Resource = ["*"]
       },
@@ -248,7 +273,17 @@ resource "aws_iam_role_policy" "ec2_policy" {
       {
         Effect = "Allow"
         Action = "iam:PassRole"
-        Resource = aws_iam_role.glue_service_role.arn
+        Resource = [
+          aws_iam_role.glue_service_role.arn,
+          "arn:aws:iam::*:role/topdevs-*-glue-service-role"
+        ]
+        Condition = {
+          StringLike = {
+            "iam:PassedToService": [
+              "glue.amazonaws.com"
+            ]
+          }
+        }
       }
     ]
   })
