@@ -258,7 +258,8 @@ resource "aws_iam_role_policy" "ec2_policy" {
         Effect = "Allow"
         Action = [
           "redshift:*",
-          "redshift-data:*"
+          "redshift-data:*",
+          "redshift-serverless:*"
         ]
         Resource = ["*"]
       },
@@ -276,12 +277,15 @@ resource "aws_iam_role_policy" "ec2_policy" {
         Action = "iam:PassRole"
         Resource = [
           aws_iam_role.glue_service_role.arn,
-          "arn:aws:iam::*:role/topdevs-*-glue-service-role"
+          "arn:aws:iam::*:role/topdevs-*-glue-service-role",
+          "arn:aws:iam::*:role/topdevs-*-redshift-serverless-role"
         ]
         Condition = {
           StringLike = {
             "iam:PassedToService": [
-              "glue.amazonaws.com"
+              "glue.amazonaws.com",
+              "redshift.amazonaws.com",
+              "redshift-serverless.amazonaws.com"
             ]
           }
         }
@@ -306,17 +310,13 @@ resource "aws_iam_role_policy" "ec2_policy" {
       {
         Effect = "Allow"
         Action = [
-          "glue:GetJob",
-          "glue:GetJobs",
-          "glue:BatchGetJobs",
-          "glue:GetJobRun",
-          "glue:GetJobRuns",
-          "glue:BatchStopJobRun",
-          "glue:StartJobRun",
-          "glue:StartCrawler",
-          "glue:GetCrawler"
+          "sts:AssumeRole",
+          "sts:GetCallerIdentity"
         ]
-        Resource = ["*"]
+        Resource = [
+          "arn:aws:iam::872515289435:role/topdevs-*-redshift-serverless-role",
+          "arn:aws:iam::872515289435:role/*"
+        ]
       }
     ]
   })
