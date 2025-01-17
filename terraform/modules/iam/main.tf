@@ -103,9 +103,14 @@ resource "aws_iam_role" "redshift-serverless-role" {
         Action = "sts:AssumeRole"
         Principal = {
           Service = "redshift.amazonaws.com"
-          AWS = [
-            aws_iam_role.ec2_role.arn
-          ]
+        }
+        Effect = "Allow"
+        Sid    = ""
+      },
+      {
+        Action = "sts:AssumeRole"
+        Principal = {
+          AWS = [aws_iam_role.ec2_role.arn]
         }
         Effect = "Allow"
         Sid    = ""
