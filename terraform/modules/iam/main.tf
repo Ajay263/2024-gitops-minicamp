@@ -229,6 +229,7 @@ resource "aws_iam_role_policy" "ec2_policy" {
           "glue:StopCrawler",
           "glue:GetCrawler",
           "glue:GetCrawlers",
+          "glue:GetCrawlerMetrics",
           "glue:UpdateCrawler",
           "glue:DeleteCrawler",
           "glue:CreateCrawler",
