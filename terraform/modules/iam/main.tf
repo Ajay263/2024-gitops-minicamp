@@ -201,7 +201,7 @@ resource "aws_iam_instance_profile" "ec2_profile" {
 resource "aws_iam_role_policy" "ec2_policy" {
   name = "topdevs-${var.environment}-ec2-policy"
   role = aws_iam_role.ec2_role.id
-  
+
   policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
@@ -285,6 +285,38 @@ resource "aws_iam_role_policy" "ec2_policy" {
             ]
           }
         }
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "logs:GetLogEvents",
+          "logs:FilterLogEvents",
+          "logs:GetLogGroupFields",
+          "logs:GetQueryResults",
+          "logs:StartQuery",
+          "logs:StopQuery",
+          "logs:DescribeLogGroups",
+          "logs:DescribeLogStreams"
+        ]
+        Resource = [
+          "arn:aws:logs:us-east-1:872515289435:log-group:/aws-glue/jobs/*:*",
+          "arn:aws:logs:us-east-1:872515289435:log-group:/aws-glue/jobs/output:*"
+        ]
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "glue:GetJob",
+          "glue:GetJobs",
+          "glue:BatchGetJobs",
+          "glue:GetJobRun",
+          "glue:GetJobRuns",
+          "glue:BatchStopJobRun",
+          "glue:StartJobRun",
+          "glue:StartCrawler",
+          "glue:GetCrawler"
+        ]
+        Resource = ["*"]
       }
     ]
   })
