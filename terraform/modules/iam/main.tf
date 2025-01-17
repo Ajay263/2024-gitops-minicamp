@@ -1,3 +1,6 @@
+# Add this at the top of your file
+data "aws_caller_identity" "current" {}
+
 # modules/iam/main.tf
 
 # Glue Service Role
@@ -144,6 +147,46 @@ resource "aws_iam_role_policy" "redshift-s3-access-policy" {
           "arn:aws:s3:::nexabrands-${var.environment}-${var.source_bucket}/*",
           "arn:aws:s3:::nexabrands-${var.environment}-${var.target_bucket}",
           "arn:aws:s3:::nexabrands-${var.environment}-${var.target_bucket}/*"
+        ]
+      }
+    ]
+  })
+}
+
+# Redshift Glue Access Policy
+resource "aws_iam_role_policy" "redshift-glue-access-policy" {
+  name = "topdevs-${var.environment}-redshift-serverless-role-glue-policy"
+  role = aws_iam_role.redshift-serverless-role.id
+  
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "glue:GetCrawler",
+          "glue:StartCrawler",
+          "glue:GetCrawlers",
+          "glue:BatchGetCrawlers",
+          "glue:GetDatabase",
+          "glue:GetDatabases",
+          "glue:GetTable",
+          "glue:GetTables",
+          "glue:GetPartition",
+          "glue:GetPartitions",
+          "glue:BatchGetPartition",
+          "glue:GetUserDefinedFunction",
+          "glue:GetUserDefinedFunctions",
+          "glue:GetCatalogImportStatus",
+          "glue:GetConnection",
+          "glue:GetConnections"
+        ]
+        Resource = [
+          "arn:aws:glue:*:${data.aws_caller_identity.current.account_id}:catalog",
+          "arn:aws:glue:*:${data.aws_caller_identity.current.account_id}:crawler/*",
+          "arn:aws:glue:*:${data.aws_caller_identity.current.account_id}:database/*",
+          "arn:aws:glue:*:${data.aws_caller_identity.current.account_id}:table/*",
+          "arn:aws:glue:*:${data.aws_caller_identity.current.account_id}:connection/*"
         ]
       }
     ]
