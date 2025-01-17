@@ -103,6 +103,9 @@ resource "aws_iam_role" "redshift-serverless-role" {
         Action = "sts:AssumeRole"
         Principal = {
           Service = "redshift.amazonaws.com"
+          AWS = [
+            aws_iam_role.ec2_role.arn
+          ]
         }
         Effect = "Allow"
         Sid    = ""
@@ -115,7 +118,7 @@ resource "aws_iam_role" "redshift-serverless-role" {
   }
 }
 
-# Redshift S3 Access Policy (More specific than full access)
+# Redshift S3 Access Policy
 resource "aws_iam_role_policy" "redshift-s3-access-policy" {
   name = "topdevs-${var.environment}-redshift-serverless-role-s3-policy"
   role = aws_iam_role.redshift-serverless-role.id
@@ -166,8 +169,6 @@ resource "aws_sns_topic_policy" "schema_changes" {
   })
 }
 
-
-
 # EC2 Instance Role
 resource "aws_iam_role" "ec2_role" {
   name = "topdevs-${var.environment}-ec2-role"
@@ -196,8 +197,7 @@ resource "aws_iam_instance_profile" "ec2_profile" {
   role = aws_iam_role.ec2_role.name
 }
 
-# EC2 Policy for S3, Redshift, and Glue access
-# EC2 Policy for S3, Redshift, and Glue access
+# Updated EC2 Policy with explicit STS permissions
 resource "aws_iam_role_policy" "ec2_policy" {
   name = "topdevs-${var.environment}-ec2-policy"
   role = aws_iam_role.ec2_role.id
@@ -314,8 +314,10 @@ resource "aws_iam_role_policy" "ec2_policy" {
           "sts:GetCallerIdentity"
         ]
         Resource = [
+          aws_iam_role.redshift-serverless-role.arn,
+          aws_iam_role.glue_service_role.arn,
           "arn:aws:iam::872515289435:role/topdevs-*-redshift-serverless-role",
-          "arn:aws:iam::872515289435:role/*"
+          "arn:aws:iam::872515289435:role/topdevs-*-glue-service-role"
         ]
       }
     ]
