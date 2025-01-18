@@ -1,36 +1,35 @@
 # modules/ec2/variables.tf
-
 variable "project_name" {
+  description = "Name of the project used for resource naming"
   type        = string
-  description = "Name of the project"
 }
 
 variable "ami_id" {
+  description = "AMI ID for the EC2 instance"
   type        = string
-  description = "ID of the AMI to use for the EC2 instance"
 }
 
 variable "instance_type" {
+  description = "Instance type for the EC2 instance"
   type        = string
-  description = "Type of EC2 instance"
 }
 
 variable "vpc_id" {
+  description = "ID of the VPC where resources will be created"
   type        = string
-  description = "ID of the VPC"
 }
 
 variable "subnet_id" {
-  type        = string
   description = "ID of the subnet where the EC2 instance will be launched"
+  type        = string
 }
 
 variable "ec2_instance_profile_name" {
+  description = "Name of the IAM instance profile for the EC2 instance"
   type        = string
-  description = "Name of the EC2 instance profile"
 }
 
 variable "public_key" {
-  type        = string
   description = "Public SSH key for EC2 instance access"
+  type        = string
 }

@@ -1,4 +1,3 @@
-
 # modules/vpc/main.tf
 data "aws_availability_zones" "available" {}
 
@@ -6,13 +5,13 @@ resource "aws_vpc" "redshift-serverless-vpc" {
   cidr_block           = var.redshift_serverless_vpc_cidr
   enable_dns_hostnames = true
   enable_dns_support   = true
-  
+
   tags = {
-    Name = "nsw-properties-redshift-serverless-vpc"
+    Name = "${var.app_name}-redshift-serverless-vpc"
   }
 }
 
-# Public Subnets
+# Public Subnet
 resource "aws_subnet" "public_subnet_az1" {
   vpc_id                  = aws_vpc.redshift-serverless-vpc.id
   cidr_block              = "10.0.10.0/24"  # Adjust CIDR as needed
@@ -20,7 +19,7 @@ resource "aws_subnet" "public_subnet_az1" {
   map_public_ip_on_launch = true
 
   tags = {
-    Name = "nsw-properties-public-subnet-az1"
+    Name = "${var.app_name}-public-subnet-az1"
   }
 }
 
@@ -29,7 +28,7 @@ resource "aws_internet_gateway" "main" {
   vpc_id = aws_vpc.redshift-serverless-vpc.id
 
   tags = {
-    Name = "nsw-properties-igw"
+    Name = "${var.app_name}-igw"
   }
 }
 
@@ -43,7 +42,7 @@ resource "aws_route_table" "public" {
   }
 
   tags = {
-    Name = "nsw-properties-public-rt"
+    Name = "${var.app_name}-public-rt"
   }
 }
 
@@ -53,13 +52,14 @@ resource "aws_route_table_association" "public_az1" {
   route_table_id = aws_route_table.public.id
 }
 
-# Original private subnets
+# Private subnets for Redshift
 resource "aws_subnet" "redshift-serverless-subnet-az1" {
   vpc_id            = aws_vpc.redshift-serverless-vpc.id
   cidr_block        = var.redshift_serverless_subnet_1_cidr
   availability_zone = data.aws_availability_zones.available.names[0]
+
   tags = {
-    Name = "nsw-properties-redshift-serverless-subnet-az1"
+    Name = "${var.app_name}-redshift-serverless-subnet-az1"
   }
 }
 
@@ -67,8 +67,9 @@ resource "aws_subnet" "redshift-serverless-subnet-az2" {
   vpc_id            = aws_vpc.redshift-serverless-vpc.id
   cidr_block        = var.redshift_serverless_subnet_2_cidr
   availability_zone = data.aws_availability_zones.available.names[1]
+
   tags = {
-    Name = "nsw-properties-redshift-serverless-subnet-az2"
+    Name = "${var.app_name}-redshift-serverless-subnet-az2"
   }
 }
 
@@ -76,13 +77,13 @@ resource "aws_subnet" "redshift-serverless-subnet-az3" {
   vpc_id            = aws_vpc.redshift-serverless-vpc.id
   cidr_block        = var.redshift_serverless_subnet_3_cidr
   availability_zone = data.aws_availability_zones.available.names[2]
+
   tags = {
-    Name = "nsw-properties-redshift-serverless-subnet-az3"
+    Name = "${var.app_name}-redshift-serverless-subnet-az3"
   }
 }
 
 resource "aws_security_group" "redshift-serverless-security-group" {
-  depends_on  = [aws_vpc.redshift-serverless-vpc]
   name        = "${var.app_name}-redshift-serverless-security-group"
   description = "${var.app_name}-redshift-serverless-security-group"
   vpc_id      = aws_vpc.redshift-serverless-vpc.id
@@ -92,6 +93,13 @@ resource "aws_security_group" "redshift-serverless-security-group" {
     from_port   = 0
     to_port     = 65535
     protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
     cidr_blocks = ["0.0.0.0/0"]
   }
 
@@ -105,6 +113,8 @@ resource "aws_vpc_endpoint" "s3_redshift" {
   service_name      = "com.amazonaws.us-east-1.s3"
   vpc_endpoint_type = "Gateway"
   route_table_ids   = [aws_vpc.redshift-serverless-vpc.default_route_table_id]
+
+  tags = {
+    Name = "${var.app_name}-s3-endpoint"
+  }
 }
-
-

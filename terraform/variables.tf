@@ -143,3 +143,15 @@ variable "public_key" {
   sensitive   = true
 }
 
+
+
+
+
+
+
+
+
+
+
+
+

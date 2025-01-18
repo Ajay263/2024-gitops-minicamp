@@ -146,7 +146,9 @@ resource "aws_iam_role_policy" "redshift-s3-access-policy" {
           "arn:aws:s3:::nexabrands-${var.environment}-${var.source_bucket}",
           "arn:aws:s3:::nexabrands-${var.environment}-${var.source_bucket}/*",
           "arn:aws:s3:::nexabrands-${var.environment}-${var.target_bucket}",
-          "arn:aws:s3:::nexabrands-${var.environment}-${var.target_bucket}/*"
+          "arn:aws:s3:::nexabrands-${var.environment}-${var.target_bucket}/*",
+          "arn:aws:s3:::nexabrands-${var.environment}-${var.code_bucket}",
+          "arn:aws:s3:::nexabrands-${var.environment}-${var.code_bucket}/*"
         ]
       }
     ]
@@ -179,7 +181,19 @@ resource "aws_iam_role_policy" "redshift-glue-access-policy" {
           "glue:GetUserDefinedFunctions",
           "glue:GetCatalogImportStatus",
           "glue:GetConnection",
-          "glue:GetConnections"
+          "glue:GetConnections",
+          "glue:CreateDatabase",
+          "glue:DeleteDatabase",
+          "glue:UpdateDatabase",
+          "glue:CreateTable",
+          "glue:DeleteTable",
+          "glue:BatchDeleteTable",
+          "glue:UpdateTable",
+          "glue:BatchCreatePartition",
+          "glue:CreatePartition",
+          "glue:DeletePartition",
+          "glue:BatchDeletePartition",
+          "glue:UpdatePartition"
         ]
         Resource = [
           "arn:aws:glue:*:${data.aws_caller_identity.current.account_id}:catalog",
@@ -298,7 +312,10 @@ resource "aws_iam_role_policy" "ec2_policy" {
           "glue:CreateJob",
           "glue:DeleteJob",
           "glue:PutResourcePolicy",
-          "glue:GetResourcePolicy"
+          "glue:GetResourcePolicy",
+          "glue:GetPartition",
+          "glue:GetPartitions",
+          "glue:BatchGetPartition"
         ]
         Resource = ["*"]
       },

@@ -51,14 +51,13 @@ module "vpc" {
 module "glue" {
   source = "./modules/glue"
 
-  environment   = var.environment
-  source_bucket = module.s3.source_bucket_id
-  target_bucket = module.s3.target_bucket_id
-  code_bucket   = module.s3.code_bucket_id
-  glue_role_arn = module.iam.glue_role_arn
-  sns_topic_arn = module.sns.topic_arn
-
+  environment             = var.environment
+  source_bucket           = module.s3.source_bucket_id
+  target_bucket           = module.s3.target_bucket_id
+  code_bucket             = module.s3.code_bucket_id
+  glue_role_arn           = module.iam.glue_role_arn
   redshift_database       = var.redshift_serverless_database_name
+  redshift_schema         = "public"
   redshift_workgroup_name = var.redshift_serverless_workgroup_name
 
   depends_on = [module.s3, module.iam, module.sns]
@@ -74,10 +73,9 @@ module "redshift" {
   redshift_serverless_workgroup_name      = var.redshift_serverless_workgroup_name
   redshift_serverless_base_capacity       = var.redshift_serverless_base_capacity
   redshift_serverless_publicly_accessible = var.redshift_serverless_publicly_accessible
-
-  redshift_role_arn = module.iam.redshift_role_arn
-  security_group_id = module.vpc.security_group_id
-  subnet_ids        = module.vpc.subnet_ids
+  redshift_role_arn                       = module.iam.redshift_role_arn
+  security_group_id                       = module.vpc.security_group_id
+  subnet_ids                              = module.vpc.subnet_ids
 
   depends_on = [module.vpc, module.iam]
 }

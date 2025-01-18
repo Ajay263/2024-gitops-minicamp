@@ -5,6 +5,11 @@ resource "aws_glue_catalog_database" "database" {
   description = "Database for ${var.environment} environment organization reports"
 }
 
+resource "aws_glue_catalog_database" "external" {
+  name        = "nexabrands_dbt"
+  description = "External database for Redshift Spectrum tables"
+}
+
 resource "aws_glue_crawler" "crawler" {
   name          = "topdevs-${var.environment}-org-report-crawler"
   database_name = aws_glue_catalog_database.database.name

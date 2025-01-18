@@ -1,47 +1,41 @@
 
-# Variables
+# modules/glue/variables.tf
+variable "environment" {
+  description = "Environment name (e.g., dev, staging, prod)"
+  type        = string
+}
+
 variable "source_bucket" {
-  description = "Source bucket ID"
+  description = "Name of the S3 bucket containing source data"
   type        = string
 }
 
 variable "target_bucket" {
-  description = "Target bucket ID"
+  description = "Name of the S3 bucket for processed data"
   type        = string
 }
 
 variable "code_bucket" {
-  description = "Code bucket ID"
+  description = "Name of the S3 bucket containing Glue scripts"
   type        = string
 }
 
 variable "glue_role_arn" {
-  description = "ARN of the Glue service role"
-  type        = string
-}
-
-variable "environment" {
-  description = "Environment (dev/staging/prod)"
-  type        = string
-}
-
-variable "sns_topic_arn" {
-  description = "ARN of the SNS topic for schema change notifications"
+  description = "ARN of the IAM role for Glue services"
   type        = string
 }
 
 variable "redshift_database" {
+  description = "Name of the Redshift database"
   type        = string
-  description = "Redshift database name"
 }
 
 variable "redshift_schema" {
+  description = "Name of the Redshift schema"
   type        = string
-  description = "Redshift schema name"
-  default     = "public"
 }
 
 variable "redshift_workgroup_name" {
+  description = "Name of the Redshift Serverless workgroup"
   type        = string
-  description = "Redshift workgroup name"
 }
