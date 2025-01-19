@@ -2,18 +2,17 @@ import boto3
 import sys
 import time
 
-def check_schema_exists(redshift_client, database_name, workgroup_name, schema_name):
+def check_object_exists(redshift_client, database_name, workgroup_name, query):
     """
-    Check if a schema exists in Redshift
+    Check if an object exists in Redshift using the provided query
     """
     try:
         response = redshift_client.execute_statement(
             Database=database_name,
             WorkgroupName=workgroup_name,
-            Sql=f"SELECT 1 FROM pg_namespace WHERE nspname = '{schema_name}'"
+            Sql=query
         )
         
-        # Wait for the query to complete
         query_id = response['Id']
         while True:
             status = redshift_client.describe_statement(Id=query_id)
@@ -22,7 +21,6 @@ def check_schema_exists(redshift_client, database_name, workgroup_name, schema_n
             time.sleep(0.5)
             
         if status['Status'] == 'FINISHED':
-            # Get the results
             result = redshift_client.get_statement_result(Id=query_id)
             return len(result.get('Records', [])) > 0
             
@@ -42,14 +40,12 @@ def execute_sql(sql_statements, database_name, workgroup_name):
             continue
         
         try:
-            # Execute the SQL statement
             response = redshift_client.execute_statement(
                 Database=database_name,
                 WorkgroupName=workgroup_name,
                 Sql=sql.strip()
             )
             
-            # Wait for the query to complete
             query_id = response['Id']
             while True:
                 status = redshift_client.describe_statement(Id=query_id)
@@ -92,13 +88,40 @@ def main():
     
     redshift_client = boto3.client('redshift-data')
     
-    # Check if schemas exist first
-    external_schema_exists = check_schema_exists(redshift_client, database_name, workgroup_name, 'tickit_external')
-    dbt_schema_exists = check_schema_exists(redshift_client, database_name, workgroup_name, 'tickit_dbt')
+    # Check if schemas exist
+    external_schema_exists = check_object_exists(
+        redshift_client, 
+        database_name, 
+        workgroup_name, 
+        "SELECT 1 FROM pg_namespace WHERE nspname = 'tickit_external'"
+    )
+    
+    dbt_schema_exists = check_object_exists(
+        redshift_client, 
+        database_name, 
+        workgroup_name, 
+        "SELECT 1 FROM pg_namespace WHERE nspname = 'tickit_dbt'"
+    )
+    
+    # Check if user exists
+    user_exists = check_object_exists(
+        redshift_client,
+        database_name,
+        workgroup_name,
+        "SELECT 1 FROM pg_user WHERE usename = 'dbt'"
+    )
+    
+    # Check if group exists
+    group_exists = check_object_exists(
+        redshift_client,
+        database_name,
+        workgroup_name,
+        "SELECT 1 FROM pg_group WHERE groname = 'dbt'"
+    )
     
     sql_statements = []
     
-    # Only add schema creation statements if they don't exist
+    # Schema creation statements
     if not external_schema_exists:
         sql_statements.append(f"""
             create external schema tickit_external
@@ -111,36 +134,28 @@ def main():
     if not dbt_schema_exists:
         sql_statements.append("create schema tickit_dbt;")
     
-    # Add the rest of the statements
+    # Drop public schema if it exists
+    sql_statements.append("drop schema if exists public cascade;")
+    
+    # User creation/alteration
+    if not user_exists:
+        sql_statements.append(
+            f"create user dbt with password '{dbt_password}' nocreatedb nocreateuser syslog access restricted connection limit 10;"
+        )
+    else:
+        sql_statements.append(
+            f"alter user dbt with password '{dbt_password}' nocreatedb nocreateuser syslog access restricted connection limit 10;"
+        )
+    
+    # Group creation and user assignment
+    if not group_exists:
+        sql_statements.append("create group dbt;")
+    
+    # Add user to group (this is idempotent in Redshift)
+    sql_statements.append("alter group dbt add user dbt;")
+    
+    # Grants
     sql_statements.extend([
-        # Drop public schema if it exists
-        "drop schema if exists public cascade;",
-        
-        # Create or alter dbt user
-        f"""
-        do $$
-        begin
-            if not exists (select 1 from pg_user where usename = 'dbt') then
-                create user dbt with password '{dbt_password}' nocreatedb nocreateuser syslog access restricted connection limit 10;
-            else
-                alter user dbt with password '{dbt_password}' nocreatedb nocreateuser syslog access restricted connection limit 10;
-            end if;
-        end
-        $$;
-        """,
-        
-        # Create group if not exists and add user
-        """
-        do $$
-        begin
-            if not exists (select 1 from pg_group where groname = 'dbt') then
-                create group dbt;
-            end if;
-        end
-        $$;
-        """,
-        "alter group dbt add user dbt;",
-        
         # Grants on tickit_external schema
         "grant usage on schema tickit_external to group dbt;",
         "grant create on schema tickit_external to group dbt;",
