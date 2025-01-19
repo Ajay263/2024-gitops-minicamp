@@ -1,6 +1,7 @@
 import boto3
 import sys
 import time
+import os
 
 def check_object_exists(redshift_client, database_name, workgroup_name, query):
     """
@@ -73,6 +74,12 @@ def main():
     workgroup_name = sys.argv[2]
     iam_role_arn = sys.argv[3]
     dbt_password = sys.argv[4]
+    
+    # Print working directory and arguments for debugging
+    print(f"Working directory: {os.getcwd()}")
+    print(f"Database: {database_name}")
+    print(f"Workgroup: {workgroup_name}")
+    print(f"IAM Role: {iam_role_arn}")
     
     redshift_client = boto3.client('redshift-data')
     
