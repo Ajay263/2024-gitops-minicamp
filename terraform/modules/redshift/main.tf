@@ -30,6 +30,8 @@ resource "aws_redshiftserverless_workgroup" "serverless" {
 }
 
 # Add resource to execute SQL initialization
+# modules/redshift/main.tf
+
 resource "terraform_data" "sql_init" {
   depends_on = [aws_redshiftserverless_workgroup.serverless]
 
@@ -41,6 +43,9 @@ resource "terraform_data" "sql_init" {
 
   provisioner "local-exec" {
     command = <<-EOT
+      # Wait for Redshift to be fully available
+      aws redshift-serverless wait workgroup-available --workgroup-name "${var.redshift_serverless_workgroup_name}" && \
+      sleep 30 && \
       cd ${path.module} && python3 sql-init.py \
       "${var.redshift_serverless_database_name}" \
       "${var.redshift_serverless_workgroup_name}" \

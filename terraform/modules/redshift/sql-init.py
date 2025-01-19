@@ -29,9 +29,9 @@ def check_object_exists(redshift_client, database_name, workgroup_name, query):
     except Exception:
         return False
 
-def execute_sql(sql_statements, database_name, workgroup_name):
+def execute_sql(sql_statements, database_name, workgroup_name, max_retries=3):
     """
-    Execute SQL statements in Redshift Serverless
+    Execute SQL statements in Redshift Serverless with retries
     """
     redshift_client = boto3.client('redshift-data')
     
@@ -39,31 +39,44 @@ def execute_sql(sql_statements, database_name, workgroup_name):
         if not sql.strip():
             continue
             
-        try:
-            response = redshift_client.execute_statement(
-                Database=database_name,
-                WorkgroupName=workgroup_name,
-                Sql=sql.strip()
-            )
-            
-            query_id = response['Id']
-            while True:
-                status = redshift_client.describe_statement(Id=query_id)
-                if status['Status'] in ['FINISHED', 'FAILED', 'ABORTED']:
-                    break
-                time.sleep(0.5)
-            
-            if status['Status'] == 'FAILED':
-                error_message = status.get('Error', 'Unknown error')
-                if 'already exists' in error_message.lower():
-                    continue
-                raise Exception(f"Query failed: {error_message}\nSQL: {sql}")
+        retry_count = 0
+        while retry_count < max_retries:
+            try:
+                print(f"Executing SQL: {sql.strip()}")
+                response = redshift_client.execute_statement(
+                    Database=database_name,
+                    WorkgroupName=workgroup_name,
+                    Sql=sql.strip()
+                )
                 
-        except Exception as e:
-            if 'already exists' in str(e).lower():
-                continue
-            print(f"Error executing SQL: {str(e)}")
-            sys.exit(1)
+                query_id = response['Id']
+                while True:
+                    status = redshift_client.describe_statement(Id=query_id)
+                    if status['Status'] in ['FINISHED', 'FAILED', 'ABORTED']:
+                        break
+                    time.sleep(0.5)
+                
+                if status['Status'] == 'FAILED':
+                    error_message = status.get('Error', 'Unknown error')
+                    if 'already exists' in error_message.lower():
+                        break  # Skip to next SQL statement
+                    print(f"Query failed: {error_message}\nSQL: {sql}")
+                    retry_count += 1
+                    if retry_count == max_retries:
+                        raise Exception(f"Query failed after {max_retries} retries: {error_message}")
+                    time.sleep(5)  # Wait before retrying
+                    continue
+                    
+                break  # Success - exit retry loop
+                    
+            except Exception as e:
+                if 'already exists' in str(e).lower():
+                    break
+                print(f"Error executing SQL: {str(e)}")
+                retry_count += 1
+                if retry_count == max_retries:
+                    raise
+                time.sleep(5)  # Wait before retrying
 
 def main():
     if len(sys.argv) != 5:
