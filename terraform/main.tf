@@ -57,7 +57,7 @@ module "glue" {
   code_bucket             = module.s3.code_bucket_id
   glue_role_arn           = module.iam.glue_role_arn
   redshift_database       = var.redshift_serverless_database_name
-  redshift_schema         = "public"
+  redshift_schema         = "tickit_dbt" # Updated from "public" since we're dropping public schema
   redshift_workgroup_name = var.redshift_serverless_workgroup_name
 
   depends_on = [module.s3, module.iam, module.sns]
@@ -77,7 +77,11 @@ module "redshift" {
   security_group_id                       = module.vpc.security_group_id
   subnet_ids                              = module.vpc.subnet_ids
 
-  depends_on = [module.vpc, module.iam]
+  # New variables for SQL initialization
+  dbt_password       = var.dbt_password
+  glue_database_name = var.glue_database_name
+
+  depends_on = [module.vpc, module.iam, module.glue]
 }
 
 module "ec2" {

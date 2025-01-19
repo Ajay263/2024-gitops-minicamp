@@ -1,5 +1,8 @@
-
 # modules/redshift/main.tf
+
+# Add this at the top to get account ID
+data "aws_caller_identity" "current" {}
+
 resource "aws_redshiftserverless_namespace" "serverless" {
   namespace_name      = var.redshift_serverless_namespace_name
   db_name            = var.redshift_serverless_database_name
@@ -23,3 +26,25 @@ resource "aws_redshiftserverless_workgroup" "serverless" {
     Name = var.redshift_serverless_workgroup_name
   }
 }
+
+# Add resource to execute SQL initialization
+resource "terraform_data" "sql_init" {
+  depends_on = [aws_redshiftserverless_workgroup.serverless]
+
+  triggers_replace = {
+    namespace_id = aws_redshiftserverless_namespace.serverless.id
+    workgroup_id = aws_redshiftserverless_workgroup.serverless.id
+    script_hash  = filemd5("${path.module}/sql-init.py")
+  }
+
+  provisioner "local-exec" {
+    command = "python3 ${path.module}/sql-init.py ${var.redshift_serverless_database_name} ${var.redshift_serverless_workgroup_name} ${var.redshift_role_arn} '${var.dbt_password}' ${data.aws_caller_identity.current.account_id} ${var.glue_database_name}"
+    
+    environment = {
+      AWS_DEFAULT_REGION = data.aws_region.current.name
+    }
+  }
+}
+
+# Add this to get current region
+data "aws_region" "current" {}

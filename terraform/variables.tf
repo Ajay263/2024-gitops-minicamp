@@ -144,6 +144,19 @@ variable "public_key" {
 }
 
 
+variable "dbt_password" {
+  type        = string
+  sensitive   = true
+  description = "Password for the dbt user"
+}
+
+variable "glue_database_name" {
+  type        = string
+  description = "Name of the Glue database to connect to"
+  default     = "tickit_dbt"
+}
+
+
 
 
 
