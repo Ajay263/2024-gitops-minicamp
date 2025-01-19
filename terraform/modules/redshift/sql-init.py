@@ -3,6 +3,35 @@ import sys
 import time
 import os
 
+def wait_for_workgroup(redshift_client, workgroup_name, max_attempts=30):
+    """
+    Wait for Redshift Serverless workgroup to be available
+    """
+    print(f"Waiting for workgroup {workgroup_name} to be available...")
+    for attempt in range(max_attempts):
+        try:
+            response = redshift_client.get_workgroup(
+                workgroupName=workgroup_name
+            )
+            status = response['workgroup']['status']
+            print(f"Workgroup status: {status}")
+            
+            if status == 'AVAILABLE':
+                print("Workgroup is available!")
+                return True
+                
+            if status in ['FAILED', 'ERROR']:
+                print(f"Workgroup failed to become available: {status}")
+                return False
+                
+        except Exception as e:
+            print(f"Error checking workgroup status: {str(e)}")
+        
+        time.sleep(10)  # Wait 10 seconds between checks
+        
+    print(f"Timed out waiting for workgroup after {max_attempts} attempts")
+    return False
+
 def check_object_exists(redshift_client, database_name, workgroup_name, query):
     """
     Check if an object exists in Redshift
@@ -26,7 +55,8 @@ def check_object_exists(redshift_client, database_name, workgroup_name, query):
             return len(result.get('Records', [])) > 0
             
         return False
-    except Exception:
+    except Exception as e:
+        print(f"Error checking object existence: {str(e)}")
         return False
 
 def execute_sql(sql_statements, database_name, workgroup_name, max_retries=3):
@@ -94,32 +124,39 @@ def main():
     print(f"Workgroup: {workgroup_name}")
     print(f"IAM Role: {iam_role_arn}")
     
-    redshift_client = boto3.client('redshift-data')
+    # Wait for workgroup to be available
+    redshift_client = boto3.client('redshift-serverless')
+    if not wait_for_workgroup(redshift_client, workgroup_name):
+        print("Failed to wait for workgroup to become available")
+        sys.exit(1)
+    
+    # Switch to redshift-data client for SQL operations
+    redshift_data_client = boto3.client('redshift-data')
     
     # Check what exists
     external_schema_exists = check_object_exists(
-        redshift_client, 
+        redshift_data_client, 
         database_name, 
         workgroup_name, 
         "SELECT 1 FROM pg_namespace WHERE nspname = 'tickit_external'"
     )
     
     dbt_schema_exists = check_object_exists(
-        redshift_client, 
+        redshift_data_client, 
         database_name, 
         workgroup_name, 
         "SELECT 1 FROM pg_namespace WHERE nspname = 'tickit_dbt'"
     )
     
     public_schema_exists = check_object_exists(
-        redshift_client, 
+        redshift_data_client, 
         database_name, 
         workgroup_name, 
         "SELECT 1 FROM pg_namespace WHERE nspname = 'public'"
     )
     
     user_exists = check_object_exists(
-        redshift_client,
+        redshift_data_client,
         database_name,
         workgroup_name,
         "SELECT 1 FROM pg_user WHERE usename = 'dbt'"
