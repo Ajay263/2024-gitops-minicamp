@@ -1,0 +1,146 @@
+name: Process Orders Data
+
+on:
+  push:
+    branches:
+      - main  # Trigger on push to the main branch
+    paths:
+      - 'terraform/modules/scripts/orders.py'  # Updated path to match project structure
+  workflow_dispatch:  # Allow manual triggering.
+
+jobs:
+  test:
+    name: 'Run PySpark Tests'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.9'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pyspark pytest pytest-cov allure-pytest
+
+      - name: Run PySpark tests
+        run: |
+          export PYTHONPATH=$PYTHONPATH:$GITHUB_WORKSPACE/terraform/modules/scripts
+          cd terraform/modules/tests
+          pytest test_orders.py -v --cov=../scripts --cov-report=xml:coverage.xml --cov-report=html:coverage_html --alluredir=allure-results
+
+      - name: Upload Coverage Report (HTML)
+        uses: actions/upload-artifact@v3
+        with:
+          name: coverage_html
+          path: terraform/modules/tests/coverage_html
+
+      - name: Upload Allure Results
+        uses: actions/upload-artifact@v3
+        with:
+          name: allure-results
+          path: terraform/modules/tests/allure-results
+
+      - name: Generate Allure Report
+        uses: simple-elf/allure-report-action@master
+        if: always()
+        with:
+          allure_results: terraform/modules/tests/allure-results
+          allure_report: allure-report
+
+      # Optional: Upload Allure Report as an Artifact
+      - name: Upload Allure Report (Optional)
+        uses: actions/upload-artifact@v3
+        with:
+          name: allure-report
+          path: allure-report
+
+      # Optional: Deploy Allure Report to GitHub Pages
+      - name: Deploy Allure Report to GitHub Pages (Optional)
+        if: always()
+        uses: peaceiris/actions-gh-pages@v2
+        env:
+          PERSONAL_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PUBLISH_BRANCH: gh-pages
+          PUBLISH_DIR: allure-report
+
+      - name: Add Coverage Comment to PR
+        if: github.event_name == 'pull_request'
+        uses: MishaKav/pytest-coverage-comment@main
+        with:
+          pytest-xml-coverage-path: terraform/modules/tests/coverage.xml
+          title: PySpark Test Coverage Report
+          create-new-comment: true
+          report-only-changed-files: true
+
+  deploy-glue:
+    name: 'Deploy ETL Glue Job'
+    runs-on: ubuntu-latest
+    environment: production
+    needs: test  # Ensure tests pass before deploying
+    defaults:
+      run:
+        shell: bash
+
+    permissions:
+      id-token: write  # Required for OIDC
+      contents: read   # Required to checkout the repository
+
+    steps:
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.ROLE_TO_ASSUME }}
+          aws-region: us-east-1
+
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.9'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install boto3 pytest
+
+      - name: Upload Glue Script to S3
+        run: |
+          aws s3 cp terraform/modules/scripts/orders.py "s3://${CODE_BUCKET}/scripts/orders.py"
+        env:
+          CODE_BUCKET: ${{ secrets.CODE_BUCKET }}
+
+      - name: Deploy Glue Job
+        run: |
+          aws glue create-job \
+            --name "topdevs-${ENVIRONMENT}-etl-orders-job" \
+            --role "${GLUE_SERVICE_ROLE}" \
+            --command '{
+              "Name": "glueetl",
+              "ScriptLocation": "s3://'${CODE_BUCKET}'/scripts/orders.py",
+              "PythonVersion": "3"
+            }' \
+            --glue-version "4.0" \
+            --worker-type "G.1X" \
+            --number-of-workers 2 \
+            --timeout 2880 \
+            --max-retries 1 \
+            --default-arguments '{
+              "--enable-auto-scaling": "true",
+              "--enable-continuous-cloudwatch-log": "true",
+              "--enable-metrics": "true",
+              "--source-path": "s3://'${SOURCE_BUCKET}'/data/orders.csv",
+              "--destination-path": "s3://'${TARGET_BUCKET}'/orders/",
+              "--job-language": "python"
+            }'
+        env:
+          ENVIRONMENT: ${{ secrets.ENVIRONMENT }}
+          CODE_BUCKET: ${{ secrets.CODE_BUCKET }}
+          SOURCE_BUCKET: ${{ secrets.SOURCE_BUCKET }}
+          TARGET_BUCKET: ${{ secrets.TARGET_BUCKET }}
+          GLUE_SERVICE_ROLE: ${{ secrets.GLUE_SERVICE_ROLE }}

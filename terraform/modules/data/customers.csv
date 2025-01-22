@@ -1,0 +1,37 @@
+CUSTOMER_ID,customer.name,city
+789201.0 units,Local Market,Worcester
+789202.0,,Stellenbosch
+789203.0,  Market Plus  ,Nelspruit
+789301.0,Value Store,Grahamstown
+-1.0 units,Food World,Stellenbosch
+789101.0,Community Market#@$,East London
+789102.0,  Fresh & Quick  #@$,Pietermaritzburg
+789103.0,Star Market,  Klerksdorp
+789121.0,CENTRAL STORE,Pietermaritzburg
+789122.0,Quality Mart,George
+ID_789220.0,Sunshine Supermarket,  Stellenbosch
+789221.0 units,,Durban
+-1.0,Family Grocers,Paarl
+789321.0,Easy Shop,Worcester#@$
+-1.0,Metro Market,none#@$
+789402.0 units,Corner Shop Plus#@$,George
+789403.0,The Food Shop,  Nelspruit
+789420.0 units,Retail Express#@$,Kimberley
+789421.0,  Village Store  ,Upington
+789422.0,Riverside Market,  Paarl
+789501.0,Town Market,Bloemfontein#@$
+,Fresh Finds,Polokwane
+789520.0,Smart Buy,GEORGE
+789521.0,Daily Fresh,PIETERMARITZBURG
+789522.0,  Good Price Store  #@$,Pretoria#@$
+789601.0,NULL,Nelspruit
+789603.0 units,Urban Market,  Bloemfontein
+ID_789702.0,Prime Groceries,George#@$
+789703.0,Food Fair#@$,EAST LONDON#@$
+789621.0,Green Grocers,  Cape Town
+789622.0,Budget Foods,Nelspruit
+789720.0,Bargain Basket#@$,Klerksdorp
+789721.0 UNITS,  Fresh Choice  ,Johannesburg
+789902.0,Quick Mart,  JOHANNESBURG
+789903.0,Super Save,Paarl
+789221.0,,Durban

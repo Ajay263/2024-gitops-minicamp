@@ -1,0 +1,99 @@
+name: S3 to Redshift ETL Job Deployment
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'terraform/modules/scripts/**'
+    branches:
+      - main
+      - develop
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  deploy-glue:
+    name: 'Deploy S3 to Redshift ETL Job'
+    runs-on: ubuntu-latest
+    environment: production
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.ROLE_TO_ASSUME }}
+          aws-region: us-east-1
+
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.9'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install boto3 pytest pandas awswrangler
+
+      - name: Upload Glue Script to S3
+        run: |
+          aws s3 cp terraform/modules/scripts/s3_to_redshift.py "s3://${CODE_BUCKET}/scripts/s3_to_redshift.py"
+        env:
+          CODE_BUCKET: ${{ secrets.CODE_BUCKET }}
+
+      - name: Deploy Glue Job
+        run: |
+          aws glue update-job \
+            --job-name "topdevs-${ENVIRONMENT}-s3-to-redshift-job" \
+            --job-update '{
+              "Role": "'${GLUE_ROLE_ARN}'",
+              "Command": {
+                "Name": "pythonshell",
+                "ScriptLocation": "s3://'${CODE_BUCKET}'/scripts/s3_to_redshift.py",
+                "PythonVersion": "3"
+              },
+              "GlueVersion": "1.0",
+              "Timeout": 2880,
+              "MaxRetries": 1,
+              "DefaultArguments": {
+                "--enable-continuous-cloudwatch-log": "true",
+                "--source-bucket": "'${SOURCE_BUCKET}'",
+                "--redshift-database": "'${REDSHIFT_DATABASE}'",
+                "--redshift-schema": "'${REDSHIFT_SCHEMA}'",
+                "--redshift-workgroup": "'${REDSHIFT_WORKGROUP}'",
+                "--job-name": "topdevs-'${ENVIRONMENT}'-s3-to-redshift-job",
+                "--enable-metrics": "true",
+                "--additional-python-modules": "awswrangler==3.5.1,pandas==2.0.3,numpy==1.24.3"
+              }
+            }'
+        env:
+          ENVIRONMENT: ${{ secrets.ENVIRONMENT }}
+          CODE_BUCKET: ${{ secrets.CODE_BUCKET }}
+          SOURCE_BUCKET: ${{ secrets.SOURCE_BUCKET }}
+          REDSHIFT_DATABASE: ${{ secrets.REDSHIFT_DATABASE }}
+          REDSHIFT_SCHEMA: ${{ secrets.REDSHIFT_SCHEMA }}
+          REDSHIFT_WORKGROUP: ${{ secrets.REDSHIFT_WORKGROUP }}
+          GLUE_ROLE_ARN: ${{ secrets.GLUE_SERVICE_ROLE }}
+
+
+      - name: Verify Deployment
+        run: |
+          JOB_NAME="topdevs-${ENVIRONMENT}-s3-to-redshift-job"
+          JOB_INFO=$(aws glue get-job --job-name "$JOB_NAME")
+          echo "Verifying job configuration..."
+          echo "$JOB_INFO" | jq .
+
+          if [ $? -eq 0 ]; then
+            echo "✅ Job deployment verified successfully"
+          else
+            echo "❌ Job verification failed"
+            exit 1
+          fi
+        env:
+          ENVIRONMENT: ${{ secrets.ENVIRONMENT }}
