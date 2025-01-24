@@ -1,0 +1,1 @@
+Products ETL job completed successfully. Partitioned Parquet output saved to: s3a://nexabrands-prod-target/products/
