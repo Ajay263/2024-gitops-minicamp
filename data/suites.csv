@@ -1,4 +1,4 @@
 "DESCRIPTION","DURATION IN MS","NAME","PARENT SUITE","START TIME","STATUS","STOP TIME","SUB SUITE","SUITE","TEST CLASS","TEST METHOD"
-"Test the main function with mocked GlueContext and S3.","52","test_main_with_mocked_glue","","Fri Jan 24 09:09:37 GMT 2025","failed","Fri Jan 24 09:09:37 GMT 2025","","test_products","",""
-"Test cleaning and transforming products data.","4659","test_clean_products_data","","Fri Jan 24 09:09:33 GMT 2025","passed","Fri Jan 24 09:09:37 GMT 2025","","test_products","",""
-"Test loading products data from a CSV file.","3","test_load_products_data","","Fri Jan 24 09:09:33 GMT 2025","failed","Fri Jan 24 09:09:33 GMT 2025","","test_products","",""
+"Test the main function with mocked GlueContext and S3.","241","test_main_with_mocked_glue","","Fri Jan 24 09:15:11 GMT 2025","broken","Fri Jan 24 09:15:11 GMT 2025","","test_products","",""
+"Test loading products data from a CSV file.","1375","test_load_products_data","","Fri Jan 24 09:15:06 GMT 2025","passed","Fri Jan 24 09:15:07 GMT 2025","","test_products","",""
+"Test cleaning and transforming products data.","3504","test_clean_products_data","","Fri Jan 24 09:15:07 GMT 2025","passed","Fri Jan 24 09:15:11 GMT 2025","","test_products","",""
