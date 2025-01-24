@@ -1,3 +1,3 @@
 "DESCRIPTION","DURATION IN MS","NAME","PARENT SUITE","START TIME","STATUS","STOP TIME","SUB SUITE","SUITE","TEST CLASS","TEST METHOD"
-"Test loading products data from a CSV file.","1277","test_load_products_data","","Fri Jan 24 09:55:26 GMT 2025","passed","Fri Jan 24 09:55:27 GMT 2025","","test_products","",""
-"Test cleaning and transforming products data.","3529","test_clean_products_data","","Fri Jan 24 09:55:27 GMT 2025","passed","Fri Jan 24 09:55:30 GMT 2025","","test_products","",""
+"Test loading products data from a CSV file.","1247","test_load_products_data","","Fri Jan 24 11:46:22 GMT 2025","passed","Fri Jan 24 11:46:24 GMT 2025","","test_products","",""
+"Test cleaning and transforming products data.","3287","test_clean_products_data","","Fri Jan 24 11:46:24 GMT 2025","passed","Fri Jan 24 11:46:27 GMT 2025","","test_products","",""
