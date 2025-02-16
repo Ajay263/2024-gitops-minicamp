@@ -1,8 +1,0 @@
-"DESCRIPTION","DURATION IN MS","NAME","PARENT SUITE","START TIME","STATUS","STOP TIME","SUB SUITE","SUITE","TEST CLASS","TEST METHOD"
-"Test renaming columns to lowercase.","43","test_rename_columns_to_lowercase","","Fri Jan 31 12:02:38 GMT 2025","passed","Fri Jan 31 12:02:38 GMT 2025","","test_customers","",""
-"Test loading customers data.","1270","test_load_customers_data","","Fri Jan 31 12:02:34 GMT 2025","passed","Fri Jan 31 12:02:35 GMT 2025","","test_customers","",""
-"Test trimming whitespace from string columns.","360","test_trim_string_columns","","Fri Jan 31 12:02:37 GMT 2025","passed","Fri Jan 31 12:02:38 GMT 2025","","test_customers","",""
-"Test cleaning the 'CUSTOMER_ID' column.","364","test_clean_customer_id","","Fri Jan 31 12:02:38 GMT 2025","passed","Fri Jan 31 12:02:38 GMT 2025","","test_customers","",""
-"Test cleaning and transforming customer data.","708","test_clean_customer_data","","Fri Jan 31 12:02:38 GMT 2025","passed","Fri Jan 31 12:02:39 GMT 2025","","test_customers","",""
-"Test cleaning and formatting string columns.","292","test_clean_string_columns","","Fri Jan 31 12:02:38 GMT 2025","passed","Fri Jan 31 12:02:38 GMT 2025","","test_customers","",""
-"Test dropping rows with null values and duplicates.","2371","test_drop_na_and_duplicates","","Fri Jan 31 12:02:35 GMT 2025","passed","Fri Jan 31 12:02:37 GMT 2025","","test_customers","",""
