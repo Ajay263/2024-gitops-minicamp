@@ -1,16 +1,16 @@
-
-nexabrands_dbt:
+# airflow/dbt/nexabrands_dbt/profiles.yml
+prod:
+  target: prod
   outputs:
     prod:
       type: redshift
-      host: nexabrands-redshift-workgroup.043309357116.us-east-1.redshift-serverless.amazonaws.com
-      user: dbt
-      password: YourSecurePassword123!
+      host: "{{ env_var('REDSHIFT_HOST') }}"
       port: 5439
       dbname: nexabrands_datawarehouse
-      schema: nexabrands_dbt
-      threads: 4
-      keepalives_idle: 0
-      connect_timeout: 60
-  target: prod
-
+      user: "{{ env_var('REDSHIFT_USER') }}"
+      password: "{{ env_var('REDSHIFT_PASSWORD') }}"
+      # Add these for IAM access
+      method: iam
+      iam_profile: default
+      region: us-east-1
+      cluster_identifier: nexabrands-redshift-workgroup

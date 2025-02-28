@@ -90,22 +90,18 @@ resource "aws_subnet" "redshift-serverless-subnet-az3" {
 }
 
 # Security Group with Open Redshift Port
-# Replace the existing security group resource with this
+# modules/vpc/main.tf
 resource "aws_security_group" "redshift-serverless-security-group" {
-  name_prefix = "${var.app_name}-redshift-sg-"
+  name        = "${var.app_name}-redshift-serverless-security-group"
   description = "Security group for Redshift Serverless"
   vpc_id      = aws_vpc.redshift-serverless-vpc.id
-
-  lifecycle {
-    create_before_destroy = true
-  }
 
   ingress {
     description = "Redshift port access"
     from_port   = 5439
     to_port     = 5439
     protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
+    cidr_blocks = ["0.0.0.0/0"]  # Open to all for GitHub runners
   }
 
   egress {

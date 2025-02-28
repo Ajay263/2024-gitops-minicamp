@@ -27,13 +27,23 @@ jobs:
           python-version: '3.12'
 
       - name: Install dependencies
-        run: pip install -r  airflow/requirements_dbt_venv.txt
+        run: pip install -r airflow/requirements_dbt_venv.txt
 
       - name: Configure AWS Credentials using OIDC
         uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: ${{ secrets.ROLE_TO_ASSUME }}
           aws-region: us-east-1
+
+      - name: Get Redshift endpoint
+        id: redshift_endpoint
+        run: |
+          echo "REDSHIFT_ENDPOINT=$(terraform -chdir=terraform output -raw redshift_endpoint)" >> $GITHUB_ENV
+
+      - name: Test Redshift Connectivity
+        run: |
+          echo "Testing connection to $REDSHIFT_ENDPOINT:5439"
+          nc -vz $REDSHIFT_ENDPOINT 5439
 
       - name: Set up dbt profiles.yml
         run: |
@@ -44,11 +54,7 @@ jobs:
         working-directory: airflow/dbt/nexabrands_dbt
         run: |
           aws s3 cp s3://${{ env.S3_MANIFEST_BUCKET }}/${{ env.S3_MANIFEST_KEY }} ./manifest.json || echo "Manifest not found"
-       
-      - name: Test Redshift Connectivity
-        working-directory: airflow/dbt/nexabrands_dbt
-        run: nc -vz nexabrands-redshift-workgroup.043309357116.us-east-1.redshift-serverless.amazonaws.com 5439
-        
+
       - name: Run dbt debug
         working-directory: airflow/dbt/nexabrands_dbt
         run: dbt debug --target prod

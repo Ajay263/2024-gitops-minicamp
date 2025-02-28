@@ -27,3 +27,8 @@ output "subnet_ids" {
     aws_subnet.public_subnet_az1.id
   ]
 }
+
+# modules/redshift/main.tf
+output "redshift_endpoint" {
+  value = aws_redshiftserverless_workgroup.serverless.endpoint[0].address
+}

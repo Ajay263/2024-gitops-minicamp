@@ -27,3 +27,9 @@ variable "public_key" {
   description = "Public key for SSH access"
   type        = string
 }
+
+variable "redshift_cluster_arn" {
+  description = "ARN of the Redshift Serverless workgroup"
+  type        = string
+}
+

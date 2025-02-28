@@ -1,6 +1,7 @@
 # Add this at the top of your file
 data "aws_caller_identity" "current" {}
 
+
 resource "aws_iam_role" "glue_service_role" {
   name = "topdevs-${var.environment}-glue-service-role"
 
@@ -486,7 +487,7 @@ resource "aws_iam_role_policy" "ec2_policy" {
 
 # Add this new policy for Redshift KMS access
 resource "aws_iam_role_policy" "redshift-kms-access-policy" {
-  name = "topdevs-${var.environment}-redshift-serverless-role-kms-policy"
+  name = "topdevs-redshift-serverless-role-kms-policy"
   role = aws_iam_role.redshift-serverless-role.id
 
   policy = jsonencode({
@@ -500,6 +501,54 @@ resource "aws_iam_role_policy" "redshift-kms-access-policy" {
           "kms:DescribeKey"
         ]
         Resource = [var.kms_key_arn]  # Make sure to pass this variable
+      }
+    ]
+  })
+}
+
+
+# GitHub Actions IAM Role
+resource "aws_iam_role" "github_actions_role" {
+  name = "github-actions-role"
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Principal = {
+          AWS = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:root"
+        }
+        Action = "sts:AssumeRole"
+      }
+    ]
+  })
+}
+
+# IAM Policy for Redshift Access
+resource "aws_iam_role_policy" "github_redshift_access" {
+  name = "github-redshift-access"
+  role = aws_iam_role.github_actions_role.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "redshift-data:ExecuteStatement",
+          "redshift-data:GetStatementResult",
+          "redshift-serverless:GetWorkgroup"
+        ]
+        Resource = "*"
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "secretsmanager:GetSecretValue"
+        ]
+        Resource = [
+          "arn:aws:secretsmanager:${var.aws_region}:${data.aws_caller_identity.current.account_id}:secret:${var.redshift_cluster_arn}-*"
+        ]
       }
     ]
   })
