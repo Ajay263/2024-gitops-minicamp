@@ -1,7 +1,0 @@
-"DESCRIPTION","DURATION IN MS","NAME","PARENT SUITE","START TIME","STATUS","STOP TIME","SUB SUITE","SUITE","TEST CLASS","TEST METHOD"
-"Test renaming columns to lowercase.","52","test_rename_columns_to_lowercase","","Tue Mar 11 13:44:23 GMT 2025","passed","Tue Mar 11 13:44:23 GMT 2025","","test_customer_targets","",""
-"Test dropping rows with invalid values.","349","test_drop_invalid_rows","","Tue Mar 11 13:44:23 GMT 2025","passed","Tue Mar 11 13:44:23 GMT 2025","","test_customer_targets","",""
-"Test cleaning and transforming customer targets data.","648","test_clean_customer_targets_data","","Tue Mar 11 13:44:23 GMT 2025","passed","Tue Mar 11 13:44:24 GMT 2025","","test_customer_targets","",""
-"Test cleaning the CUSTOMER_ID column.","2050","test_clean_customer_id","","Tue Mar 11 13:44:20 GMT 2025","passed","Tue Mar 11 13:44:22 GMT 2025","","test_customer_targets","",""
-"Test replacing negative values in target columns with None.","355","test_handle_negative_values","","Tue Mar 11 13:44:22 GMT 2025","passed","Tue Mar 11 13:44:23 GMT 2025","","test_customer_targets","",""
-"Test loading customer targets data.","1315","test_load_customer_targets_data","","Tue Mar 11 13:44:19 GMT 2025","passed","Tue Mar 11 13:44:20 GMT 2025","","test_customer_targets","",""
