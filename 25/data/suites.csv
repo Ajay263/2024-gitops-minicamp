@@ -1,0 +1,8 @@
+"DESCRIPTION","DURATION IN MS","NAME","PARENT SUITE","START TIME","STATUS","STOP TIME","SUB SUITE","SUITE","TEST CLASS","TEST METHOD"
+"Test the complete cleaning process.","208","test_clean_products_data","","Wed Mar 12 11:51:31 GMT 2025","passed","Wed Mar 12 11:51:31 GMT 2025","","test_products","",""
+"Test loading products data with mocked Spark session.","1","test_load_products_data","","Wed Mar 12 11:51:31 GMT 2025","broken","Wed Mar 12 11:51:31 GMT 2025","","test_products","",""
+"Test cleaning special characters.","265","test_clean_special_characters","","Wed Mar 12 11:51:31 GMT 2025","passed","Wed Mar 12 11:51:31 GMT 2025","","test_products","",""
+"Test converting product_id.","386","test_convert_product_id","","Wed Mar 12 11:51:30 GMT 2025","passed","Wed Mar 12 11:51:31 GMT 2025","","test_products","",""
+"Test filtering valid products.","292","test_filter_valid_products","","Wed Mar 12 11:51:31 GMT 2025","passed","Wed Mar 12 11:51:31 GMT 2025","","test_products","",""
+"Test cleaning null and empty values.","336","test_clean_nulls_and_empty_values","","Wed Mar 12 11:51:30 GMT 2025","passed","Wed Mar 12 11:51:30 GMT 2025","","test_products","",""
+"Test normalizing column names.","2323","test_normalize_column_names","","Wed Mar 12 11:51:27 GMT 2025","passed","Wed Mar 12 11:51:30 GMT 2025","","test_products","",""
