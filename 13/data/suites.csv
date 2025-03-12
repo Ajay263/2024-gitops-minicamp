@@ -1,0 +1,8 @@
+"DESCRIPTION","DURATION IN MS","NAME","PARENT SUITE","START TIME","STATUS","STOP TIME","SUB SUITE","SUITE","TEST CLASS","TEST METHOD"
+"Test that load_orders_data correctly loads CSV data with the specified schema.","2956","test_load_orders_data","","Wed Mar 12 09:45:34 GMT 2025","passed","Wed Mar 12 09:45:37 GMT 2025","","test_orders","",""
+"Test that rows with null values are properly removed.","492","test_clean_orders_data_drop_nulls","","Wed Mar 12 09:45:42 GMT 2025","passed","Wed Mar 12 09:45:43 GMT 2025","","test_orders","",""
+"Test that columns are properly renamed.","258","test_clean_orders_data_column_renaming","","Wed Mar 12 09:45:37 GMT 2025","passed","Wed Mar 12 09:45:38 GMT 2025","","test_orders","",""
+"Test that customer_id is properly cleaned and converted to integer.","1502","test_clean_orders_data_customer_id_cleaning","","Wed Mar 12 09:45:40 GMT 2025","passed","Wed Mar 12 09:45:41 GMT 2025","","test_orders","",""
+"Test filtering of unwanted values.","2128","test_clean_orders_data_unwanted_values","","Wed Mar 12 09:45:38 GMT 2025","passed","Wed Mar 12 09:45:40 GMT 2025","","test_orders","",""
+"Test that order_placement_date is properly cleaned and standardized.","794","test_clean_orders_data_date_cleaning","","Wed Mar 12 09:45:41 GMT 2025","passed","Wed Mar 12 09:45:42 GMT 2025","","test_orders","",""
+"Test that duplicate rows are properly removed.","338","test_clean_orders_data_drop_duplicates","","Wed Mar 12 09:45:42 GMT 2025","passed","Wed Mar 12 09:45:42 GMT 2025","","test_orders","",""
