@@ -1,12 +1,8 @@
-from datetime import (
-    datetime,
-    timedelta,
-)
+from datetime import datetime, timedelta
 from airflow.operators.dummy_operator import DummyOperator
 from airflow.providers.amazon.aws.operators.glue import GlueJobOperator
 from airflow import DAG
-# Import Great Expectations operator
-from great_expectations_provider.operators.great_expectations import GreatExpectationsOperator
+from great_expectations_provider.operators.validate_checkpoint import GXValidateCheckpointOperator
 
 # Path to the Great Expectations context directory
 GX_CONTEXT_ROOT_DIR = "/opt/airflow/include/great_expectations"
@@ -38,25 +34,29 @@ dag = DAG(
     tags=['etl', 'glue', 'topdevs']
 )
 
-# Start operator
+# Start and End operators
 start = DummyOperator(task_id='start', dag=dag)
-
-# End operator
 end = DummyOperator(task_id='end', dag=dag)
 
 # Define job configurations
 job_configs = {
     'products': {
         'dependencies': ['start'],
-        'validate': True
+        'validate': True,
+        'checkpoint_name': 'products_checkpoint',
+        'suite_name': 'products_data_expectation_suite'
     },
     'customers': {
         'dependencies': ['start'],
-        'validate': True
+        'validate': True,
+        'checkpoint_name': 'customers_checkpoint',
+        'suite_name': 'customers_data_expectation_suite'
     },
     'customer_targets': {
         'dependencies': ['customers'],
-        'validate': True
+        'validate': True,
+        'checkpoint_name': 'customer_targets_checkpoint',
+        'suite_name': 'customer_targets_data_expectation_suite'
     },
     'dates': {
         'dependencies': ['start'],
@@ -64,19 +64,32 @@ job_configs = {
     },
     'orders': {
         'dependencies': ['products', 'customers', 'dates'],
-        'validate': True
+        'validate': True,
+        'checkpoint_name': 'orders_checkpoint',
+        'suite_name': 'orders_data_expectation_suite'
     },
     'order_lines': {
         'dependencies': ['orders'],
-        'validate': True
+        'validate': True,
+        'checkpoint_name': 'order_lines_checkpoint',
+        'suite_name': 'order_lines_data_expectation_suite'
     },
     'order_fulfillment': {
         'dependencies': ['order_lines'],
-        'validate': True
+        'validate': True,
+        'checkpoint_name': 'order_fulfillment_checkpoint',
+        'suite_name': 'order_fulfillment_data_expectation_suite'
     }
 }
 
-# Create Glue job tasks
+# Helper function to create a checkpoint configuration function
+def make_checkpoint_function(checkpoint_name):
+    def _configure_checkpoint(context):
+        # Retrieve and return the checkpoint from the GE context by its name.
+        return context.checkpoints.get(checkpoint_name)
+    return _configure_checkpoint
+
+# Create Glue job tasks and corresponding validation tasks
 glue_tasks = {}
 validate_tasks = {}
 
@@ -84,7 +97,7 @@ for job_name, config in job_configs.items():
     task_id = f"glue_job_{job_name}"
     glue_job_name = f"topdevs-{ENV}-{job_name}-job"
     
-    # Define script arguments
+    # Define script arguments for the Glue job
     script_args = {
         "--source-path": f"s3://{SOURCE_BUCKET}/",
         "--destination-path": f"s3://{TARGET_BUCKET}/",
@@ -105,19 +118,19 @@ for job_name, config in job_configs.items():
         dag=dag
     )
     
-    # Add validation task if configured
+    # Add validation task if configured for this job
     if config.get('validate', False):
         validate_task_id = f"validate_{job_name}"
-        s3_path = f"s3://{TARGET_BUCKET}/{job_name}/"
+        checkpoint_name = config.get('checkpoint_name')
         
-        validate_tasks[job_name] = GreatExpectationsOperator(
+        validate_tasks[job_name] = GXValidateCheckpointOperator(
             task_id=validate_task_id,
             data_context_root_dir=GX_CONTEXT_ROOT_DIR,
-            expectation_suite_name=f"{job_name}_suite",
-            data_asset_name=s3_path,  # S3 path to the processed data
-            conn_id="aws_default",
+            configure_checkpoint=make_checkpoint_function(checkpoint_name),
+            batch_parameters={'path': f's3://{TARGET_BUCKET}/{job_name}/', 'datasource': 's3_datasource'},
             fail_task_on_validation_failure=True,
             return_json_dict=True,
+            context_type="file",
             dag=dag
         )
 
@@ -129,14 +142,11 @@ for job_name, config in job_configs.items():
         else:
             glue_tasks[dep] >> glue_tasks[job_name]
     
-    # Add validation after Glue job if applicable
     if config.get('validate', False):
         glue_tasks[job_name] >> validate_tasks[job_name]
-        
-        # Check if this is a final task
+        # If the job is final (i.e. no other job depends on it), route validation to end
         if not any(job_name in c['dependencies'] for c in job_configs.values()):
             validate_tasks[job_name] >> end
     else:
-        # If no validation, connect directly to end if final task
         if not any(job_name in c['dependencies'] for c in job_configs.values()):
             glue_tasks[job_name] >> end

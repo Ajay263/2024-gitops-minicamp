@@ -9,7 +9,7 @@ from airflow.operators.bash import BashOperator
 from airflow.utils.task_group import TaskGroup
 from airflow.hooks.base import BaseHook
 import psycopg2
-from airflow.providers.amazon.aws.hooks.s3 import S3Hook
+import boto3
 
 # Environment setup.
 env = 'local'
@@ -29,9 +29,10 @@ profile_config = ProfileConfig(
     ),
 )
 
-def save_docs_locally(project_dir: str, output_dir: str):
+def save_docs_locally(project_dir: str, output_dir: str, **kwargs):
     """
     Save dbt docs files locally, including the assets directory
+    Added **kwargs to catch additional parameters like context
     """
     os.makedirs(output_dir, exist_ok=True)
     
@@ -55,7 +56,7 @@ def save_docs_locally(project_dir: str, output_dir: str):
             print(f"Warning: {src} not found, skipping.")
     
     # Copy assets directory if it exists
-    assets_src = os.path.join(project_dir, "assets")
+    assets_src = os.path.join(project_dir, "target/assets")  # Changed from "assets" to "target/assets"
     assets_dst = os.path.join(output_dir, "assets")
     
     if os.path.exists(assets_src):
@@ -89,8 +90,6 @@ def verify_redshift_connection():
 
 @task
 def upload_docs_to_s3():
-    import boto3
-    
     local_dir = "/opt/airflow/dbt-docs/"
     s3_bucket = "nexabrands-prod-target"
     s3_key_prefix = "dbt-docs/"
@@ -157,11 +156,13 @@ def dbt_docs_generator():
             env={'PATH': os.environ['PATH']},
         )
     
+    # Use DbtDocsOperator with properly formatted callback
+    # The callback function needs to accept **kwargs to handle the context parameter
     generate_dbt_docs = DbtDocsOperator(
         task_id="generate_dbt_docs",
         project_dir="/opt/airflow/dbt/nexabrands_dbt",
         profile_config=profile_config,
-        callback=lambda project_dir: save_docs_locally(project_dir, "/opt/airflow/dbt-docs"),
+        callback=lambda project_dir, **kwargs: save_docs_locally(project_dir, "/opt/airflow/dbt-docs", **kwargs),
         env={'PATH': os.environ['PATH']}
     )
     
