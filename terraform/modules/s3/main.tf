@@ -90,11 +90,23 @@ resource "aws_kms_key" "s3_kms_key" {
         ]
         Resource = "*"
       },
-      # Add statement to allow EC2 role
       {
         Effect = "Allow"
         Principal = {
           AWS = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/topdevs-${var.environment}-ec2-role"
+        }
+        Action = [
+          "kms:Decrypt",
+          "kms:Encrypt",
+          "kms:GenerateDataKey",
+          "kms:DescribeKey"
+        ]
+        Resource = "*"
+      },
+      {
+        Effect = "Allow"
+        Principal = {
+          AWS = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/topdevs-${var.environment}-redshift-serverless-role"
         }
         Action = [
           "kms:Decrypt",
@@ -122,6 +134,60 @@ resource "aws_kms_key" "s3_kms_key" {
     Purpose     = "s3-encryption"
   }
 }
+
+# resource "aws_kms_key" "s3_kms_key" {
+#   description             = "KMS key for S3 bucket encryption"
+#   deletion_window_in_days = var.kms_deletion_window
+#   enable_key_rotation     = true
+
+#   policy = jsonencode({
+#     Version = "2012-10-17"
+#     Statement = [
+#       {
+#         Effect = "Allow"
+#         Principal = {
+#           AWS = var.glue_service_role_arn
+#         }
+#         Action = [
+#           "kms:Decrypt",
+#           "kms:Encrypt",
+#           "kms:GenerateDataKey",
+#           "kms:DescribeKey"
+#         ]
+#         Resource = "*"
+#       },
+#       # Add statement to allow EC2 role
+#       {
+#         Effect = "Allow"
+#         Principal = {
+#           AWS = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/topdevs-${var.environment}-ec2-role"
+#         }
+#         Action = [
+#           "kms:Decrypt",
+#           "kms:Encrypt",
+#           "kms:GenerateDataKey",
+#           "kms:DescribeKey"
+#         ]
+#         Resource = "*"
+#       },
+#       {
+#         Effect = "Allow"
+#         Principal = {
+#           AWS = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:root"
+#         }
+#         Action = [
+#           "kms:*"
+#         ]
+#         Resource = "*"
+#       }
+#     ]
+#   })
+
+#   tags = {
+#     Environment = var.environment
+#     Purpose     = "s3-encryption"
+#   }
+# }
 
 resource "aws_kms_alias" "s3_kms_alias" {
   name          = "alias/s3-encryption-key-${var.environment}"
