@@ -1,9 +1,4 @@
 import sys
-from pyspark.sql.types import (
-    StringType,
-    StructField,
-    StructType,
-)
 
 import boto3
 from awsglue.context import GlueContext
@@ -18,6 +13,12 @@ from pyspark.sql.functions import (
     when,
 )
 
+
+from pyspark.sql.types import (
+    StringType,
+    StructField,
+    StructType,
+)
 
 
 def load_products_data(spark_session, file_path: str) -> DataFrame:

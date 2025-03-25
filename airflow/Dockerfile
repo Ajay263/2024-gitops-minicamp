@@ -9,7 +9,7 @@ RUN apt-get update && apt-get install -y \
     g++ \
     make \
     git \
-    gosu \ 
+    gosu \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
@@ -21,7 +21,10 @@ RUN pip install --no-cache-dir \
     apache-airflow[amazon] \
     apache-airflow-providers-slack \
     apache-airflow[statsd] \
-    pandas
+    soda-core-redshift \
+    pandas \
+    boto3 
+
 
 # Copy requirements files
 USER root
