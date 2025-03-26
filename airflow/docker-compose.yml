@@ -7,6 +7,7 @@ x-airflow-common:
   image: airflow-image:latest
   environment:
     &airflow-common-env
+    PYTHONPATH: "/opt/airflow/include:${PYTHONPATH}"
     AIRFLOW__CORE__EXECUTOR: CeleryExecutor
     AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres/airflow
     AIRFLOW__CORE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres/airflow
