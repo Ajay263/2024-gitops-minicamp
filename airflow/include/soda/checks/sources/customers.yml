@@ -1,0 +1,21 @@
+checks for customers:
+  # 1. Schema check – ensure all required columns are present.
+  - schema:
+      name: Confirm required columns exist
+      fail:
+        when required column missing: [customer_id, customer_name, city]
+        when schema changes:
+          - column delete
+          - column add
+          - column index change
+          - column type change
+
+  # 2. Row count check – ensure the dataset is not empty.
+  - row_count > 0
+
+  # 3. Missing value checks – flag any NULL or empty values.
+  - missing_count(customer_name) = 0
+  - missing_count(city) = 0
+
+  # 4. Uniqueness check – ensure that customer_id is unique.
+  - duplicate_count(customer_id) = 0

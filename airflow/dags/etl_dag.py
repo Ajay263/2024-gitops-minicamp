@@ -1,7 +1,13 @@
 from datetime import datetime, timedelta
+from airflow.decorators import task
 from airflow.operators.dummy_operator import DummyOperator
 from airflow.providers.amazon.aws.operators.glue import GlueJobOperator
 from airflow import DAG
+import sys
+import os
+
+# (Optional) Add /opt/airflow for DAG context if needed
+sys.path.append('/opt/airflow')
 
 # Default arguments for the DAG
 default_args = {
@@ -36,27 +42,13 @@ end = DummyOperator(task_id='end', dag=dag)
 
 # Define job configurations
 job_configs = {
-    'products': {
-        'dependencies': ['start']
-    },
-    'customers': {
-        'dependencies': ['start']
-    },
-    'customer_targets': {
-        'dependencies': ['customers']
-    },
-    'dates': {
-        'dependencies': ['start']
-    },
-    'orders': {
-        'dependencies': ['products', 'customers', 'dates']
-    },
-    'order_lines': {
-        'dependencies': ['orders']
-    },
-    'order_fulfillment': {
-        'dependencies': ['order_lines']
-    }
+    'products': {'dependencies': ['start']},
+    'customers': {'dependencies': ['start']},
+    'customer_targets': {'dependencies': ['customers']},
+    'dates': {'dependencies': ['start']},
+    'orders': {'dependencies': ['products', 'customers', 'dates']},
+    'order_lines': {'dependencies': ['orders']},
+    'order_fulfillment': {'dependencies': ['order_lines']}
 }
 
 # Create Glue job tasks
@@ -98,3 +90,25 @@ for job_name, config in job_configs.items():
     # If the job is final (i.e., no other job depends on it), connect it to the end task
     if not any(job_name in c['dependencies'] for c in job_configs.values()):
         glue_tasks[job_name] >> end
+        
+        
+
+
+@task.external_python(python='/opt/airflow/soda_venv/bin/python')
+def check_load(scan_name='check_load', checks_subpath='sources'):
+    import sys
+    import os
+    
+    # Add necessary paths to ensure module can be found
+    sys.path.append('/opt/airflow')
+    sys.path.append('/opt/airflow/include')
+    
+    # Import the check function using the full path
+    from include.soda.check_function import check
+    
+    return check(scan_name, checks_subpath)
+
+# Run Soda checks after the 'orders' Glue job
+soda_check = check_load()
+
+glue_tasks['orders'] >> soda_check >> end

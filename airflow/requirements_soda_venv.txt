@@ -1,0 +1,2 @@
+soda-core-scientific
+soda-core-redshift
