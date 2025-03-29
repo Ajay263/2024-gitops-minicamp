@@ -20,17 +20,17 @@ variable "environment" {
 ## S3 - Variables ##
 ########################
 variable "source_bucket" {
-  description = "Name suffix of the source data bucket (will be prefixed with nexabrands-{environment}-)"
+  description = "Name suffix of the source data bucket (will be prefixed with nexabrand-{environment}-)"
   type        = string
 }
 
 variable "target_bucket" {
-  description = "Name suffix of the target data bucket (will be prefixed with nexabrands-{environment}-)"
+  description = "Name suffix of the target data bucket (will be prefixed with nexabrand-{environment}-)"
   type        = string
 }
 
 variable "code_bucket" {
-  description = "Name suffix of the code bucket (will be prefixed with nexabrands-{environment}-)"
+  description = "Name suffix of the code bucket (will be prefixed with nexabrand-{environment}-)"
   type        = string
 }
 
