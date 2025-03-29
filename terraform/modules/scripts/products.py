@@ -12,8 +12,6 @@ from pyspark.sql.functions import (
     trim,
     when,
 )
-
-
 from pyspark.sql.types import (
     StringType,
     StructField,

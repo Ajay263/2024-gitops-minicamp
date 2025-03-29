@@ -121,7 +121,7 @@ if __name__ == "__main__":
     s3_client = boto3.client("s3")
     bucket_name = "nexabrand-prod-target"  # Output bucket name
 
-    # Find the generated CSV file in the temporary folder
+    # Find the generated CSV file in the temporary folder.
     response = s3_client.list_objects_v2(
         Bucket=bucket_name, Prefix="customer_targets/temp/"
     )
