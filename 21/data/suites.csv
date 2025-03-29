@@ -1,6 +1,0 @@
-"DESCRIPTION","DURATION IN MS","NAME","PARENT SUITE","START TIME","STATUS","STOP TIME","SUB SUITE","SUITE","TEST CLASS","TEST METHOD"
-"Test trimming of whitespace in all columns.","286","test_clean_products_data_whitespace_trimming","","Wed Mar 12 11:02:57 GMT 2025","failed","Wed Mar 12 11:02:58 GMT 2025","","test_products","",""
-"Test that load_products_data correctly loads CSV data with the specified schema.","2981","test_load_products_data","","Wed Mar 12 11:02:52 GMT 2025","passed","Wed Mar 12 11:02:55 GMT 2025","","test_products","",""
-"Test that columns are properly renamed.","218","test_clean_products_data_column_renaming","","Wed Mar 12 11:02:55 GMT 2025","passed","Wed Mar 12 11:02:55 GMT 2025","","test_products","",""
-"Test removal of special characters from all columns.","1284","test_clean_products_data_special_characters","","Wed Mar 12 11:02:55 GMT 2025","passed","Wed Mar 12 11:02:56 GMT 2025","","test_products","",""
-"Test that rows with nulls are properly filtered out.","253","test_clean_products_data_null_filtering","","Wed Mar 12 11:02:58 GMT 2025","failed","Wed Mar 12 11:02:59 GMT 2025","","test_products","",""
