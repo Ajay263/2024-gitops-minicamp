@@ -9,18 +9,18 @@ from pyspark.sql.functions import (
     col,
     concat,
     datediff,
+    dayofmonth,
     lit,
     lpad,
-    regexp_replace,
+    month,
     regexp_extract,
+    regexp_replace,
     round,
     to_date,
     trim,
     upper,
     when,
     year,
-    month,
-    dayofmonth,
 )
 from pyspark.sql.types import (
     FloatType,
@@ -83,11 +83,12 @@ def clean_agreed_delivery_date(df: DataFrame) -> DataFrame:
         df.withColumn(
             "AGREED_DELIVERY_DATE",
             # Extract the month day, year part
-            regexp_extract(col("AGREED_DELIVERY_DATE"), r"([A-Za-z]+, [A-Za-z]+ \d+, \d{4})", 1)
-        )
-        .withColumn(
+            regexp_extract(
+                col("AGREED_DELIVERY_DATE"), r"([A-Za-z]+, [A-Za-z]+ \d+, \d{4})", 1
+            ),
+        ).withColumn(
             "AGREED_DELIVERY_DATE",
-            to_date(col("AGREED_DELIVERY_DATE"), "EEEE, MMMM d, yyyy")
+            to_date(col("AGREED_DELIVERY_DATE"), "EEEE, MMMM d, yyyy"),
         )
         # Extract month and day, then reconstruct with year 2024
         .withColumn(
@@ -97,10 +98,12 @@ def clean_agreed_delivery_date(df: DataFrame) -> DataFrame:
                     lit("2024-"),
                     lpad(month(col("AGREED_DELIVERY_DATE")).cast("string"), 2, "0"),
                     lit("-"),
-                    lpad(dayofmonth(col("AGREED_DELIVERY_DATE")).cast("string"), 2, "0")
+                    lpad(
+                        dayofmonth(col("AGREED_DELIVERY_DATE")).cast("string"), 2, "0"
+                    ),
                 ),
-                "yyyy-MM-dd"
-            )
+                "yyyy-MM-dd",
+            ),
         )
     )
 
@@ -111,11 +114,12 @@ def clean_actual_delivery_date(df: DataFrame) -> DataFrame:
         df.withColumn(
             "ACTUAL_DELIVERY_DATE",
             # Extract the month day, year part
-            regexp_extract(col("ACTUAL_DELIVERY_DATE"), r"([A-Za-z]+, [A-Za-z]+ \d+, \d{4})", 1)
-        )
-        .withColumn(
+            regexp_extract(
+                col("ACTUAL_DELIVERY_DATE"), r"([A-Za-z]+, [A-Za-z]+ \d+, \d{4})", 1
+            ),
+        ).withColumn(
             "ACTUAL_DELIVERY_DATE",
-            to_date(col("ACTUAL_DELIVERY_DATE"), "EEEE, MMMM d, yyyy")
+            to_date(col("ACTUAL_DELIVERY_DATE"), "EEEE, MMMM d, yyyy"),
         )
         # Extract month and day, then reconstruct with year 2024
         .withColumn(
@@ -125,10 +129,12 @@ def clean_actual_delivery_date(df: DataFrame) -> DataFrame:
                     lit("2024-"),
                     lpad(month(col("ACTUAL_DELIVERY_DATE")).cast("string"), 2, "0"),
                     lit("-"),
-                    lpad(dayofmonth(col("ACTUAL_DELIVERY_DATE")).cast("string"), 2, "0")
+                    lpad(
+                        dayofmonth(col("ACTUAL_DELIVERY_DATE")).cast("string"), 2, "0"
+                    ),
                 ),
-                "yyyy-MM-dd"
-            )
+                "yyyy-MM-dd",
+            ),
         )
     )
 
@@ -198,12 +204,13 @@ def write_transformed_data(df: DataFrame, s3_output_path: str) -> None:
     )
 
 
-if _name_ == "_main_":
+if __name__ == "__main__":
     # Initialize Spark session and Glue context
-    spark = SparkSession.builder \
-        .appName("OrderLinesDataProcessing") \
-        .config("spark.sql.legacy.timeParserPolicy", "LEGACY") \
+    spark = (
+        SparkSession.builder.appName("OrderLinesDataProcessing")
+        .config("spark.sql.legacy.timeParserPolicy", "LEGACY")
         .getOrCreate()
+    )
     glue_context = GlueContext(spark.sparkContext)
     job = Job(glue_context)
     job.init("order-lines-data-processing-job")
