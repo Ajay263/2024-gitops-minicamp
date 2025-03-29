@@ -22,8 +22,8 @@ default_args = {
 
 # Environment configuration
 ENV = "prod"
-SOURCE_BUCKET = f"nexabrands-{ENV}-source"
-TARGET_BUCKET = f"nexabrands-{ENV}-target"
+SOURCE_BUCKET = f"nexabrand-{ENV}-source"
+TARGET_BUCKET = f"nexabrand-{ENV}-target"
 
 # Create DAG
 dag = DAG(

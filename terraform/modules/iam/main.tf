@@ -49,12 +49,12 @@ resource "aws_iam_role_policy" "glue_service_policy" {
           "s3:DeleteObject"
         ]
         Resource = [
-          "arn:aws:s3:::nexabrands-${var.environment}-${var.source_bucket}",
-          "arn:aws:s3:::nexabrands-${var.environment}-${var.source_bucket}/*",
-          "arn:aws:s3:::nexabrands-${var.environment}-${var.target_bucket}",
-          "arn:aws:s3:::nexabrands-${var.environment}-${var.target_bucket}/*",
-          "arn:aws:s3:::nexabrands-${var.environment}-${var.code_bucket}",
-          "arn:aws:s3:::nexabrands-${var.environment}-${var.code_bucket}/*"
+          "arn:aws:s3:::nexabrand-${var.environment}-${var.source_bucket}",
+          "arn:aws:s3:::nexabrand-${var.environment}-${var.source_bucket}/*",
+          "arn:aws:s3:::nexabrand-${var.environment}-${var.target_bucket}",
+          "arn:aws:s3:::nexabrand-${var.environment}-${var.target_bucket}/*",
+          "arn:aws:s3:::nexabrand-${var.environment}-${var.code_bucket}",
+          "arn:aws:s3:::nexabrand-${var.environment}-${var.code_bucket}/*"
         ]
       },
       # Add this new statement for Glue and logs bucket access
@@ -106,12 +106,12 @@ resource "aws_iam_role_policy" "redshift-s3-access-policy" {
           "s3:PutObject"
         ]
         Resource = [
-          "arn:aws:s3:::nexabrands-${var.environment}-${var.source_bucket}",
-          "arn:aws:s3:::nexabrands-${var.environment}-${var.source_bucket}/*",
-          "arn:aws:s3:::nexabrands-${var.environment}-${var.target_bucket}",
-          "arn:aws:s3:::nexabrands-${var.environment}-${var.target_bucket}/*",
-          "arn:aws:s3:::nexabrands-${var.environment}-${var.code_bucket}",
-          "arn:aws:s3:::nexabrands-${var.environment}-${var.code_bucket}/*"
+          "arn:aws:s3:::nexabrand-${var.environment}-${var.source_bucket}",
+          "arn:aws:s3:::nexabrand-${var.environment}-${var.source_bucket}/*",
+          "arn:aws:s3:::nexabrand-${var.environment}-${var.target_bucket}",
+          "arn:aws:s3:::nexabrand-${var.environment}-${var.target_bucket}/*",
+          "arn:aws:s3:::nexabrand-${var.environment}-${var.code_bucket}",
+          "arn:aws:s3:::nexabrand-${var.environment}-${var.code_bucket}/*"
         ]
       }
     ]
@@ -333,15 +333,13 @@ resource "aws_iam_role_policy" "ec2_policy" {
           "s3:GetReplicationConfiguration"
         ]
         Resource = [
-          "arn:aws:s3:::nexabrands-${var.environment}-${var.source_bucket}",
-          "arn:aws:s3:::nexabrands-${var.environment}-${var.source_bucket}/*",
-          "arn:aws:s3:::nexabrands-${var.environment}-${var.target_bucket}",
-          "arn:aws:s3:::nexabrands-${var.environment}-${var.target_bucket}/*",
-          "arn:aws:s3:::nexabrands-${var.environment}-${var.code_bucket}",
-          "arn:aws:s3:::nexabrands-${var.environment}-${var.code_bucket}/*",
-          # Add the new GX docs bucket
-          "arn:aws:s3:::nexabrands-${var.environment}-gx-docs",
-          "arn:aws:s3:::nexabrands-${var.environment}-gx-docs/*"
+          "arn:aws:s3:::nexabrand-${var.environment}-${var.source_bucket}",
+          "arn:aws:s3:::nexabrand-${var.environment}-${var.source_bucket}/*",
+          "arn:aws:s3:::nexabrand-${var.environment}-${var.target_bucket}",
+          "arn:aws:s3:::nexabrand-${var.environment}-${var.target_bucket}/*",
+          "arn:aws:s3:::nexabrand-${var.environment}-${var.code_bucket}",
+          "arn:aws:s3:::nexabrand-${var.environment}-${var.code_bucket}/*",
+    
         ]
       },
       # KMS permissions for EC2 (unchanged)
