@@ -1,0 +1,7 @@
+"DESCRIPTION","DURATION IN MS","NAME","PARENT SUITE","START TIME","STATUS","STOP TIME","SUB SUITE","SUITE","TEST CLASS","TEST METHOD"
+"Test converting product_id.","386","test_convert_product_id","","Sat Mar 29 09:15:41 GMT 2025","passed","Sat Mar 29 09:15:42 GMT 2025","","test_products","",""
+"Test normalizing column names.","2175","test_normalize_column_names","","Sat Mar 29 09:15:39 GMT 2025","passed","Sat Mar 29 09:15:41 GMT 2025","","test_products","",""
+"Test the complete cleaning process.","223","test_clean_products_data","","Sat Mar 29 09:15:42 GMT 2025","passed","Sat Mar 29 09:15:43 GMT 2025","","test_products","",""
+"Test cleaning special characters.","271","test_clean_special_characters","","Sat Mar 29 09:15:42 GMT 2025","passed","Sat Mar 29 09:15:42 GMT 2025","","test_products","",""
+"Test cleaning null and empty values.","291","test_clean_nulls_and_empty_values","","Sat Mar 29 09:15:41 GMT 2025","passed","Sat Mar 29 09:15:41 GMT 2025","","test_products","",""
+"Test filtering valid products.","287","test_filter_valid_products","","Sat Mar 29 09:15:42 GMT 2025","passed","Sat Mar 29 09:15:42 GMT 2025","","test_products","",""
