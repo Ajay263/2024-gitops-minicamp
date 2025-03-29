@@ -3,9 +3,9 @@ package terraform
 import rego.v1
 
 # Define allowed naming patterns
-valid_bucket_pattern := "^nexabrands-[a-z]+-[a-z0-9-]+$"
+valid_bucket_pattern := "^nexabrand-[a-z]+-[a-z0-9-]+$"
 
-valid_glue_pattern := "^nexabrands-[a-z]+-[a-z0-9-]+$"
+valid_glue_pattern := "^nexabrand-[a-z]+-[a-z0-9-]+$"
 
 # Resource limits
 glue_job_limits := {
