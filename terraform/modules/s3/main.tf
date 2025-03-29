@@ -1,7 +1,7 @@
 data "aws_caller_identity" "current" {}
 
 resource "aws_s3_bucket" "source_bucket" {
-  bucket              = "nexabrands-${var.environment}-${var.source_bucket}"
+  bucket              = "nexabrand-${var.environment}-${var.source_bucket}"
   force_destroy       = true
 }
 
@@ -30,7 +30,7 @@ resource "aws_s3_object" "source_files" {
 
 # Target Bucket
 resource "aws_s3_bucket" "target_bucket" {
-  bucket              = "nexabrands-${var.environment}-${var.target_bucket}"
+  bucket              = "nexabrand-${var.environment}-${var.target_bucket}"
   force_destroy       = true
 }
 
@@ -44,7 +44,7 @@ resource "aws_s3_bucket_versioning" "target_bucket_versioning" {
 
 # Code Bucket
 resource "aws_s3_bucket" "code_bucket" {
-  bucket        = "nexabrands-${var.environment}-${var.code_bucket}"
+  bucket        = "nexabrand-${var.environment}-${var.code_bucket}"
   force_destroy = true
 }
 
