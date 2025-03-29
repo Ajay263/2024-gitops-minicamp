@@ -43,6 +43,7 @@ x-airflow-common:
     - ./dbt/nexabrands_dbt:/opt/airflow/dbt/nexabrands_dbt
     - ./dbt/dbt-docs:/opt/airflow/dbt-docs
     - ./include:/opt/airflow/include
+    - ./setup_great_expectations.py:/opt/airflow/setup_great_expectations.py
     - ~/.ssh:/root/.ssh
     - /var/run/docker.sock:/var/run/docker.sock
   user: "${AIRFLOW_UID:-50000}:0"

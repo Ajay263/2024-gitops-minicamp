@@ -12,3 +12,4 @@ nexabrands_dbt:
       keepalives_idle: 0
       connect_timeout: 60
   target: prod
+

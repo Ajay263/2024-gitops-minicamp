@@ -54,7 +54,9 @@ resource "aws_iam_role_policy" "glue_service_policy" {
           "arn:aws:s3:::nexabrand-${var.environment}-${var.target_bucket}",
           "arn:aws:s3:::nexabrand-${var.environment}-${var.target_bucket}/*",
           "arn:aws:s3:::nexabrand-${var.environment}-${var.code_bucket}",
-          "arn:aws:s3:::nexabrand-${var.environment}-${var.code_bucket}/*"
+          "arn:aws:s3:::nexabrand-${var.environment}-${var.code_bucket}/*",
+          "arn:aws:s3:::nexabrand-${var.environment}-gx-doc",
+          "arn:aws:s3:::nexabrand-${var.environment}-gx-doc/*"
         ]
       },
       # Add this new statement for Glue and logs bucket access
@@ -111,7 +113,9 @@ resource "aws_iam_role_policy" "redshift-s3-access-policy" {
           "arn:aws:s3:::nexabrand-${var.environment}-${var.target_bucket}",
           "arn:aws:s3:::nexabrand-${var.environment}-${var.target_bucket}/*",
           "arn:aws:s3:::nexabrand-${var.environment}-${var.code_bucket}",
-          "arn:aws:s3:::nexabrand-${var.environment}-${var.code_bucket}/*"
+          "arn:aws:s3:::nexabrand-${var.environment}-${var.code_bucket}/*",
+          "arn:aws:s3:::nexabrand-${var.environment}-gx-doc",
+          "arn:aws:s3:::nexabrand-${var.environment}-gx-doc/*"
         ]
       }
     ]
@@ -235,8 +239,6 @@ resource "aws_sns_topic_policy" "schema_changes" {
   })
 }
 
-
-
 # EC2 Instance Profile
 resource "aws_iam_instance_profile" "ec2_profile" {
   name = "topdevs-${var.environment}-ec2-profile"
@@ -339,7 +341,8 @@ resource "aws_iam_role_policy" "ec2_policy" {
           "arn:aws:s3:::nexabrand-${var.environment}-${var.target_bucket}/*",
           "arn:aws:s3:::nexabrand-${var.environment}-${var.code_bucket}",
           "arn:aws:s3:::nexabrand-${var.environment}-${var.code_bucket}/*",
-    
+          "arn:aws:s3:::nexabrand-${var.environment}-gx-doc",
+          "arn:aws:s3:::nexabrand-${var.environment}-gx-doc/*"
         ]
       },
       # KMS permissions for EC2 (unchanged)
@@ -500,6 +503,86 @@ resource "aws_iam_role_policy" "ec2_policy" {
           "redshift-serverless:ListStatements"
         ]
         Resource = "*"
+      }
+    ]
+  })
+}
+
+# New S3 bucket for hosting static website (Great Expectations documentation)
+resource "aws_s3_bucket" "gx_doc" {
+  bucket        = "nexabrand-${var.environment}-gx-doc"
+  force_destroy = true
+}
+
+# Set bucket ownership controls
+resource "aws_s3_bucket_ownership_controls" "gx_doc_ownership" {
+  bucket = aws_s3_bucket.gx_doc.id
+  rule {
+    object_ownership = "BucketOwnerPreferred"
+  }
+}
+
+# Configure public access settings
+resource "aws_s3_bucket_public_access_block" "gx_doc_public_access" {
+  bucket = aws_s3_bucket.gx_doc.id
+  block_public_acls       = false
+  block_public_policy     = false
+  ignore_public_acls      = false
+  restrict_public_buckets = false
+}
+
+# Set bucket ACL to public-read
+resource "aws_s3_bucket_acl" "gx_doc_acl" {
+  depends_on = [
+    aws_s3_bucket_ownership_controls.gx_doc_ownership,
+    aws_s3_bucket_public_access_block.gx_doc_public_access,
+  ]
+  
+  bucket = aws_s3_bucket.gx_doc.id
+  acl    = "public-read"
+}
+
+# Enable bucket versioning
+resource "aws_s3_bucket_versioning" "gx_doc_versioning" {
+  bucket = aws_s3_bucket.gx_doc.id
+  versioning_configuration {
+    status = "Enabled"
+  }
+}
+
+# Configure website hosting
+resource "aws_s3_bucket_website_configuration" "gx_doc_website" {
+  bucket = aws_s3_bucket.gx_doc.id
+  
+  index_document {
+    suffix = "index.html"
+  }
+  
+  error_document {
+    key = "error.html"
+  }
+}
+
+# Add bucket policy to allow public read access
+resource "aws_s3_bucket_policy" "gx_doc_policy" {
+  depends_on = [
+    aws_s3_bucket_public_access_block.gx_doc_public_access
+  ]
+    
+  bucket = aws_s3_bucket.gx_doc.id
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect    = "Allow"
+        Principal = "*"
+        Action    = [
+          "s3:GetObject"
+        ]
+        Resource = [
+          "${aws_s3_bucket.gx_doc.arn}",
+          "${aws_s3_bucket.gx_doc.arn}/*"
+        ]
       }
     ]
   })

@@ -1,4 +1,6 @@
 apache-airflow-providers-openlineage
 astronomer-cosmos
-soda-core-redshift
 pydantic>=1.10.0,<2.0.0
+great-expectations
+airflow-provider-great-expectations
+s3fs

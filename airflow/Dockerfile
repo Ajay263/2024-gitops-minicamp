@@ -9,6 +9,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     git \
     gosu \
     python3-distutils \
+    libpq-dev \
+    postgresql-client \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
@@ -18,7 +20,7 @@ RUN pip install --no-cache-dir \
     apache-airflow[amazon] \
     apache-airflow-providers-slack \
     apache-airflow[statsd] \
-    soda-core-redshift \
+    airflow-provider-great-expectations \
     pandas \
     boto3
 
