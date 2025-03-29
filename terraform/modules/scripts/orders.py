@@ -116,8 +116,8 @@ if __name__ == "__main__":
     spark = SparkSession.builder.appName("OrdersDataProcessing").getOrCreate()
 
     # S3 paths
-    input_path = "s3a://nexabrands-prod-source/data/orders.csv"
-    output_path = "s3a://nexabrands-prod-target/orders/orders.csv"
+    input_path = "s3a://nexabrand-prod-source/data/orders.csv"
+    output_path = "s3a://nexabrand-prod-target/orders/orders.csv"
 
     orders_df = load_orders_data(spark, input_path)
     cleaned_orders = clean_orders_data(orders_df)

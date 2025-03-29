@@ -109,9 +109,9 @@ if __name__ == "__main__":
 
     # S3 paths
     s3_input_path = (
-        "s3://nexabrands-prod-source/data/order_fulfillment.csv"  # Input file path
+        "s3://nexabrand-prod-source/data/order_fulfillment.csv"  # Input file path
     )
-    s3_output_folder = "s3://nexabrands-prod-target/order_fulfillment/"  # Output folder
+    s3_output_folder = "s3://nexabrand-prod-target/order_fulfillment/"  # Output folder
     s3_temp_output_path = f"{s3_output_folder}temp/"  # Temporary output path
 
     # Load and clean data
@@ -125,7 +125,7 @@ if __name__ == "__main__":
     import boto3
 
     s3_client = boto3.client("s3")
-    bucket_name = "nexabrands-prod-target"  # Output bucket name
+    bucket_name = "nexabrand-prod-target"  # Output bucket name
 
     # Find the generated CSV file in the temporary folder
     response = s3_client.list_objects_v2(

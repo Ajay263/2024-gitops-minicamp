@@ -185,8 +185,8 @@ if __name__ == "__main__":
     spark = glueContext.spark_session
 
     # Define input and output paths
-    input_path = "s3a://nexabrands-prod-source/data/products.csv"
-    output_bucket = "nexabrands-prod-target"
+    input_path = "s3a://nexabrand-prod-source/data/products.csv"
+    output_bucket = "nexabrand-prod-target"
     output_path = f"s3a://{output_bucket}/products/products.csv"
 
     # Load and clean data

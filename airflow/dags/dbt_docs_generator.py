@@ -91,7 +91,7 @@ def verify_redshift_connection():
 @task
 def upload_docs_to_s3():
     local_dir = "/opt/airflow/dbt-docs/"
-    s3_bucket = "nexabrands-prod-target"
+    s3_bucket = "nexabrand-prod-target"
     s3_key_prefix = "dbt-docs/"
     
     # Create boto3 client directly
