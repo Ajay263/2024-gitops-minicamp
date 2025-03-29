@@ -138,7 +138,7 @@ jobs:
       
       - name: Upload Glue Script to S3
         run: |
-          aws s3 cp terraform/modules/scripts/order_fulfillment.py "s3://nexabrands-prod-code/scripts/order_fulfillment.py"
+          aws s3 cp terraform/modules/scripts/order_fulfillment.py "s3://nexabrand-prod-code/scripts/order_fulfillment.py"
         env:
           CODE_BUCKET: ${{ secrets.CODE_BUCKET }}
           ENVIRONMENT: ${{ secrets.ENVIRONMENT }}
