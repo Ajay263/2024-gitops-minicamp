@@ -24,3 +24,13 @@ output "glue_job_arns" {
   description = "ARNs of the created Glue ETL jobs"
   value       = { for k, v in aws_glue_job.etl_jobs : k => v.arn }
 }
+
+output "data_quality_job_names" {
+  description = "Names of the data quality testing jobs"
+  value       = { for k, v in aws_glue_job.data_quality_jobs : k => v.name }
+}
+
+output "data_quality_job_arns" {
+  description = "ARNs of the data quality testing jobs"
+  value       = { for k, v in aws_glue_job.data_quality_jobs : k => v.arn }
+}

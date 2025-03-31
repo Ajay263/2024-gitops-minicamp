@@ -282,7 +282,7 @@ resource "aws_s3_bucket_lifecycle_configuration" "target_bucket_lifecycle" {
 
 # New S3 bucket for hosting static website (Great Expectations documentation)
 resource "aws_s3_bucket" "gx_doc" {
-  bucket        = "nexabrands-${var.environment}-gx-doc"
+  bucket        = "nexabrand-${var.environment}-gx-doc"
   force_destroy = true
 }
 
