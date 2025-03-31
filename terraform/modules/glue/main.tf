@@ -50,11 +50,11 @@ locals {
   
   # Datasets to validate with Great Expectations
   data_quality_datasets = [
-      "products"
-      "orders"
-      "order_lines"
-      "order_fulfillment"
-      "customers"
+      "products",
+      "orders",
+      "order_lines",
+      "order_fulfillment",
+      "customers",
       "customer_targets"
 
   ]
