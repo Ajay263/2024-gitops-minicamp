@@ -3,16 +3,14 @@ import pandas as pd
 import boto3
 import json
 from io import StringIO
-from great_expectations.checkpoint import SlackNotificationAction, UpdateDataDocsAction
-from great_expectations import Checkpoint, ExpectationSuite, ValidationDefinition
 
-# Set up GX context in file mode (make sure this directory is accessible by your Airflow workers)
-context = gx.get_context(mode='file', project_root_dir="./great_expectations")
+# Set up GX context in file mode
+context = gx.get_context(mode='file',project_root_dir="./great_expectations")
 
 # Use boto3 to download the data from S3
 s3_client = boto3.client('s3')
-source_bucket_name = 'nexabrands-prod-source'
-docs_bucket_name = 'nexabrands-prod-gx-docs'  # Your new dedicated GX docs bucket
+source_bucket_name = 'nexabrand-prod-source'
+docs_bucket_name = 'nexabrand-prod-gx-doc'  # Your new dedicated GX docs bucket
 file_key = 'data/order_fulfillment.csv'
 
 response = s3_client.get_object(Bucket=source_bucket_name, Key=file_key)
@@ -34,6 +32,8 @@ assert batch_definition.name == batch_definition_name
 
 # Create a new Expectation Suite
 suite = context.suites.add(gx.ExpectationSuite(name="order_fulfillment_data_expectation_suite"))
+
+
 
 # Expectation 1: Check that the table has a defined set of columns (even if extra columns are allowed)
 expectation1 = gx.expectations.ExpectTableColumnsToMatchSet(
@@ -64,6 +64,7 @@ expectation7 = gx.expectations.ExpectColumnValueLengthsToBeBetween(
     min_value=1,
     max_value=50
 )
+
 
 # Save the suite
 suite.save()
@@ -104,7 +105,9 @@ if s3_site_name not in context.list_data_docs_sites():
 else:
     print(f"Using existing data docs site: {s3_site_name}")
 
-# Set up actions for the checkpoint including Data Docs update and Slack notification
+# Set up actions for the checkpoint including Data Docs update
+from great_expectations.checkpoint import SlackNotificationAction, UpdateDataDocsAction
+
 action_list = [
     SlackNotificationAction(
         name="Great Expectations data quality results",
@@ -118,7 +121,7 @@ action_list = [
     ),
 ]
 
-# Create checkpoint with the validation definition and actions
+# Create checkpoint
 checkpoint = gx.Checkpoint(
     name="order_fulfillment_checkpoint",
     validation_definitions=[validation_definition],
@@ -133,18 +136,25 @@ validation_results = checkpoint.run(batch_parameters=batch_parameters)
 # Build the data docs manually - this will upload the docs to S3
 context.build_data_docs(site_names=[s3_site_name])
 
-# Verify that website hosting is enabled and output the URL
+# The bucket should already be configured for website hosting via Terraform
+# Just make sure the index.html file is properly detected
 try:
+    # Verify that website hosting is enabled with expected configuration
     website_config = s3_client.get_bucket_website(Bucket=docs_bucket_name)
     print(f"Website hosting is configured with index document: {website_config.get('IndexDocument', {}).get('Suffix')}")
     
+    # Generate the S3 website URL
     region = s3_client.meta.region_name
     website_url = f"http://{docs_bucket_name}.s3-website-{region}.amazonaws.com/"
     print(f"Your Great Expectations Data Docs are available at: {website_url}")
+    
 except Exception as e:
+    # Handle case where the bucket might not have website hosting configured yet
     print(f"Warning: {e}")
     print("Attempting to configure website hosting...")
+    
     try:
+        # Enable website hosting on the bucket
         website_configuration = {
             'ErrorDocument': {'Key': 'error.html'},
             'IndexDocument': {'Suffix': 'index.html'},
@@ -153,10 +163,12 @@ except Exception as e:
             Bucket=docs_bucket_name,
             WebsiteConfiguration=website_configuration
         )
+        
         print("Website hosting successfully configured.")
         region = s3_client.meta.region_name
         website_url = f"http://{docs_bucket_name}.s3-website-{region}.amazonaws.com/"
         print(f"Your Great Expectations Data Docs are available at: {website_url}")
+        
     except Exception as config_error:
         print(f"Error configuring website hosting: {config_error}")
         print("Your bucket may already be configured via Terraform, but there might be permission issues.")

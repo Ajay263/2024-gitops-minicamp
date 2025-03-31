@@ -1,43 +1,8 @@
-# Welcome to Great Expectations! Always know what to expect from your data.
-#
-# Here you can define datasources, batch kwargs generators, integrations and
-# more. This file is intended to be committed to your repo. For help with
-# configuration please:
-#   - Read our docs: https://docs.greatexpectations.io/docs/guides/connecting_to_your_data/connect_to_data_overview/#2-configure-your-datasource
-#   - Join our slack channel: http://greatexpectations.io/slack
-
-# config_version refers to the syntactic version of this config file, and is used in maintaining backwards compatibility
-# It is auto-generated and usually does not need to be changed.
 config_version: 4.0
-
-# This config file supports variable substitution which enables: 1) keeping
-# secrets out of source control & 2) environment-based configuration changes
-# such as staging vs prod.
-#
-# When GX encounters substitution syntax (like `my_key: ${my_value}` or
-# `my_key: $my_value`) in the great_expectations.yml file, it will attempt
-# to replace the value of `my_key` with the value from an environment
-# variable `my_value` or a corresponding key read from this config file,
-# which is defined through the `config_variables_file_path`.
-# Environment variables take precedence over variables defined here.
-#
-# Substitution values defined here can be a simple (non-nested) value,
-# nested value such as a dictionary, or an environment variable (i.e. ${ENV_VAR})
-#
-#
-# https://docs.greatexpectations.io/docs/guides/setup/configuring_data_contexts/how_to_configure_credentials
-
-
 config_variables_file_path: uncommitted/config_variables.yml
-
-# The plugins_directory will be added to your python path for custom modules
-# used to override and extend Great Expectations.
 plugins_directory: plugins/
 
 stores:
-# Stores are configurable places to store things like Expectations, Validations
-# Data Docs, and more. These are for advanced users only - most users can simply
-# leave this section alone.
   expectations_store:
     class_name: ExpectationsStore
     store_backend:
@@ -68,10 +33,6 @@ validation_results_store_name: validation_results_store
 checkpoint_store_name: checkpoint_store
 
 data_docs_sites:
-  # Data Docs make it simple to visualize data quality in your project. These
-  # include Expectations, Validations & Profiles. The are built for all
-  # Datasources from JSON artifacts in the local repo including validations &
-  # profiles from the uncommitted directory. Read more at https://docs.greatexpectations.io/docs/terms/data_docs
   local_site:
     class_name: SiteBuilder
     show_how_to_buttons: true
@@ -88,6 +49,7 @@ data_docs_sites:
       class_name: TupleS3StoreBackend
       bucket: nexabrands-prod-gx-docs
       prefix: ''
+
 fluent_datasources:
   customer_targets:
     type: pandas
@@ -100,7 +62,7 @@ fluent_datasources:
         batch_definitions:
           customer_targets_batch:
             id: 87b6885d-0818-4467-b3c3-939c44f9d0c9
-            partitioner:
+            partitioner: {}
   customers:
     type: pandas
     id: a1cb04b7-2442-454c-be43-eb80ebba6805
@@ -112,7 +74,7 @@ fluent_datasources:
         batch_definitions:
           customers_batch:
             id: 64ff5b31-6bde-4440-acef-67ff654dcf52
-            partitioner:
+            partitioner: {}
   order_fulfillment:
     type: pandas
     id: 870ca5a8-ccc6-4a11-95f3-4eabd0f147e6
@@ -124,7 +86,7 @@ fluent_datasources:
         batch_definitions:
           order_fulfillment_batch:
             id: ab44fb50-0607-4f4d-a50d-d235a252694a
-            partitioner:
+            partitioner: {}
   products:
     type: pandas
     id: 81c5e4f9-6974-42a5-9b74-e6d3b241d81a
@@ -136,7 +98,7 @@ fluent_datasources:
         batch_definitions:
           products_batch:
             id: 752d8094-fd84-4350-a9a5-edda7fa8e522
-            partitioner:
+            partitioner: {}
   orders:
     type: pandas
     id: 00dbfee5-c637-458a-a65a-0bcfaa78f206
@@ -148,7 +110,7 @@ fluent_datasources:
         batch_definitions:
           orders_batch:
             id: 715968e1-57a4-428c-9de3-7558c4f4241e
-            partitioner:
+            partitioner: {}
   order_lines:
     type: pandas
     id: 9e6fe821-d43e-4e9d-a21f-4461392d7524
@@ -160,6 +122,7 @@ fluent_datasources:
         batch_definitions:
           order_lines_batch:
             id: 91b93ab7-eb07-46e6-b3fe-59456ae71572
-            partitioner:
-analytics_enabled:
+            partitioner: {}
+
+analytics_enabled: false
 data_context_id: 324b637b-04a2-45c4-aa74-18fccbce82ac

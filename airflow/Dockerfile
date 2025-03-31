@@ -20,6 +20,7 @@ RUN pip install --no-cache-dir \
     apache-airflow[amazon] \
     apache-airflow-providers-slack \
     apache-airflow[statsd] \
+    great_expectations \
     airflow-provider-great-expectations \
     pandas \
     boto3
