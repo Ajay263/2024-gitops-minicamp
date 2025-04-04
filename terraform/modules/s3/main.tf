@@ -86,7 +86,8 @@ resource "aws_kms_key" "s3_kms_key" {
           "kms:Decrypt",
           "kms:Encrypt",
           "kms:GenerateDataKey",
-          "kms:DescribeKey"
+          "kms:DescribeKey",
+          "kms:ReEncrypt*"
         ]
         Resource = "*"
       },
@@ -99,7 +100,8 @@ resource "aws_kms_key" "s3_kms_key" {
           "kms:Decrypt",
           "kms:Encrypt",
           "kms:GenerateDataKey",
-          "kms:DescribeKey"
+          "kms:DescribeKey",
+          "kms:ReEncrypt*"
         ]
         Resource = "*"
       },
@@ -112,7 +114,8 @@ resource "aws_kms_key" "s3_kms_key" {
           "kms:Decrypt",
           "kms:Encrypt",
           "kms:GenerateDataKey",
-          "kms:DescribeKey"
+          "kms:DescribeKey",
+          "kms:ReEncrypt*"
         ]
         Resource = "*"
       },

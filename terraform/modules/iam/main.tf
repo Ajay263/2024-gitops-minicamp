@@ -332,7 +332,10 @@ resource "aws_iam_role_policy" "ec2_policy" {
           "s3:GetBucketVersioning",
           "s3:ListBucketVersions",
           "s3:PutReplicationConfiguration",
-          "s3:GetReplicationConfiguration"
+          "s3:GetReplicationConfiguration",
+          "s3:GetObjectVersion",
+          "s3:AbortMultipartUpload",
+          "s3:ListMultipartUploadParts"
         ]
         Resource = [
           "arn:aws:s3:::nexabrand-${var.environment}-${var.source_bucket}",
@@ -352,7 +355,10 @@ resource "aws_iam_role_policy" "ec2_policy" {
           "kms:Decrypt",
           "kms:DescribeKey",
           "kms:GenerateDataKey",
-          "kms:Encrypt"
+          "kms:Encrypt",
+          "kms:ReEncrypt*",
+          "kms:ListKeys",
+          "kms:ListAliases"
         ]
         Resource = [
           "*"
