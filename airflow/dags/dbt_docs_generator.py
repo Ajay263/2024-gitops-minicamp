@@ -56,7 +56,7 @@ def save_docs_locally(project_dir: str, output_dir: str, **kwargs):
             print(f"Warning: {src} not found, skipping.")
     
     # Copy assets directory if it exists
-    assets_src = os.path.join(project_dir, "target/assets")  # Changed from "assets" to "target/assets"
+    assets_src = os.path.join(project_dir, "target/assets")
     assets_dst = os.path.join(output_dir, "assets")
     
     if os.path.exists(assets_src):
@@ -69,6 +69,54 @@ def save_docs_locally(project_dir: str, output_dir: str, **kwargs):
         print(f"Copied assets directory from {assets_src} to {assets_dst}")
     else:
         print(f"Warning: Assets directory {assets_src} not found, skipping.")
+
+def save_elementary_report(project_dir: str, output_dir: str, **kwargs):
+    """
+    Save Elementary report files locally
+    """
+    os.makedirs(output_dir, exist_ok=True)
+    
+    # Elementary report is stored in this directory
+    elementary_report_dir = os.path.join(project_dir, "elementary_report")
+    
+    if os.path.exists(elementary_report_dir):
+        # The destination directory for Elementary report
+        elementary_dest_dir = os.path.join(output_dir, "elementary")
+        
+        # Create elementary directory if it doesn't exist
+        if not os.path.exists(elementary_dest_dir):
+            os.makedirs(elementary_dest_dir)
+        
+        # Copy all files from elementary_report directory
+        for item in os.listdir(elementary_report_dir):
+            src_path = os.path.join(elementary_report_dir, item)
+            dst_path = os.path.join(elementary_dest_dir, item)
+            
+            if os.path.isdir(src_path):
+                # If it's a directory, copy it recursively
+                if os.path.exists(dst_path):
+                    shutil.rmtree(dst_path)
+                shutil.copytree(src_path, dst_path)
+                print(f"Copied directory {src_path} to {dst_path}")
+            else:
+                # If it's a file, copy it directly
+                shutil.copy2(src_path, dst_path)
+                print(f"Copied file {src_path} to {dst_path}")
+    else:
+        print(f"Warning: Elementary report directory {elementary_report_dir} not found.")
+        # Try to find report in alternative location
+        edr_report_path = os.path.join(project_dir, "edr_report.html")
+        if os.path.exists(edr_report_path):
+            elementary_dest_dir = os.path.join(output_dir, "elementary")
+            if not os.path.exists(elementary_dest_dir):
+                os.makedirs(elementary_dest_dir)
+            
+            # Copy the edr_report.html file
+            dst_path = os.path.join(elementary_dest_dir, "index.html")
+            shutil.copy2(edr_report_path, dst_path)
+            print(f"Copied Elementary report from {edr_report_path} to {dst_path}")
+        else:
+            print(f"Warning: Could not find Elementary report at {edr_report_path}")
 
 @task
 def verify_redshift_connection():
@@ -86,7 +134,6 @@ def verify_redshift_connection():
         print("Successfully connected to Redshift!")
     except Exception as e:
         raise Exception(f"Failed to connect to Redshift: {str(e)}")
-
 
 @task
 def upload_docs_to_s3():
@@ -133,92 +180,38 @@ def upload_docs_to_s3():
     return files_uploaded
 
 @task
-def generate_and_upload_edr_report():
-    """Generate Elementary report and upload it to S3 using boto3 directly"""
-    s3_bucket = "nexabrand-prod-target"
-    s3_key_prefix = "edr-report/"
-    report_dir = "/tmp/edr-report"  # Use /tmp to avoid permission issues
+def generate_elementary_report():
+    """Generate Elementary report using edr command"""
+    project_dir = "/opt/airflow/dbt/nexabrands_dbt"
     
-    # Create report directory
-    os.makedirs(report_dir, exist_ok=True)
-    
-    # Generate report with Elementary
-    bash_command = f"""
-        set -e
-        cd /opt/airflow/dbt/nexabrands_dbt
-        
-        # Generate the EDR report directly to our temporary directory
-        {dbt_path}/edr report \
-            --file-path {report_dir}/index.html \
-            --project-dir /opt/airflow/dbt/nexabrands_dbt
-        
-        echo "EDR report generated successfully at {report_dir}/index.html"
-    """
-    
-    # Execute the bash command
-    import subprocess
-    result = subprocess.run(bash_command, shell=True, capture_output=True, text=True)
-    
-    if result.returncode != 0:
-        print(f"Error generating EDR report: {result.stderr}")
-        raise Exception(f"Failed to generate EDR report: {result.stderr}")
-    
-    print(result.stdout)
-    
-    # Upload the report to S3
-    if not os.path.exists(f"{report_dir}/index.html"):
-        raise FileNotFoundError(f"EDR report not found at {report_dir}/index.html")
-    
-    # Create boto3 client
-    s3_client = boto3.client('s3')
-    
-    # Upload the report
-    s3_client.upload_file(
-        Filename=f"{report_dir}/index.html",
-        Bucket=s3_bucket,
-        Key=f"{s3_key_prefix}index.html",
-        ExtraArgs={
-            'ServerSideEncryption': 'AES256',
-            'ContentType': 'text/html'
-        }
-    )
-    
-    # Configure website hosting
     try:
-        s3_client.put_bucket_website(
-            Bucket=s3_bucket,
-            WebsiteConfiguration={
-                'IndexDocument': {'Suffix': 'index.html'},
-                'ErrorDocument': {'Key': 'error.html'}
-            }
-        )
+        # Change to project directory
+        os.chdir(project_dir)
         
-        # Make the EDR report the index document
-        s3_client.copy_object(
-            Bucket=s3_bucket,
-            CopySource=f"{s3_bucket}/{s3_key_prefix}index.html",
-            Key="index.html",
-            MetadataDirective="REPLACE",
-            ContentType="text/html",
-            ServerSideEncryption="AES256"
-        )
+        # Generate Elementary report using edr command
+        command = f"{dbt_path}/edr report"
         
-        print(f"Successfully configured website hosting for bucket {s3_bucket}")
+        # Execute the command
+        exit_code = os.system(command)
+        
+        if exit_code != 0:
+            raise Exception(f"Elementary report generation failed with exit code {exit_code}")
+        
+        print("Elementary report generated successfully!")
+        
+        # Save the report to the specified directory
+        save_elementary_report(project_dir, "/opt/airflow/dbt-docs")
+        
     except Exception as e:
-        print(f"Warning: Failed to configure website hosting: {str(e)}")
-    
-    # Return the URL
-    website_url = f"https://{s3_bucket}.s3-website-us-east-1.amazonaws.com/"
-    print(f"EDR report uploaded and available at: {website_url}")
-    return website_url
-    
+        raise Exception(f"Error generating Elementary report: {str(e)}")
+
 @dag(
     schedule_interval="@daily",
     start_date=datetime(2023, 1, 1),
     catchup=False,
-    tags=["dbt", "docs", "edr", env],
+    tags=["dbt", "docs", env],
 )
-def dbt_and_edr_reports_generator():
+def dbt_docs_generator():
     # Verify connection first
     connection_check = verify_redshift_connection()
     
@@ -231,14 +224,13 @@ def dbt_and_edr_reports_generator():
                 cd /opt/airflow/dbt/nexabrands_dbt
                 {dbt_path}/dbt debug --config-dir
                 {dbt_path}/dbt deps
+                # Run the external sources operation
                 {dbt_path}/dbt run-operation stage_external_sources --vars '{{"ext_full_refresh": True}}'
-                {dbt_path}/dbt run --select elementary
             """,
             env={'PATH': os.environ['PATH']},
         )
     
-    # Use DbtDocsOperator with properly formatted callback
-    # The callback function needs to accept **kwargs to handle the context parameter
+    # Generate dbt docs
     generate_dbt_docs = DbtDocsOperator(
         task_id="generate_dbt_docs",
         project_dir="/opt/airflow/dbt/nexabrands_dbt",
@@ -247,12 +239,13 @@ def dbt_and_edr_reports_generator():
         env={'PATH': os.environ['PATH']}
     )
     
-    # Use the improved upload task for dbt docs
+    # Generate Elementary report as a separate task
+    elementary_report = generate_elementary_report()
+    
+    # Upload both dbt docs and Elementary report to S3
     upload_docs = upload_docs_to_s3()
     
-    # Generate and upload EDR report using the Python task
-    edr_report = generate_and_upload_edr_report()
-    
-    connection_check >> setup >> generate_dbt_docs >> upload_docs >> edr_report
+    # Define task dependencies
+    connection_check >> setup >> generate_dbt_docs >> elementary_report >> upload_docs
 
-dbt_and_edr_reports_generator()
+dbt_docs_generator()
