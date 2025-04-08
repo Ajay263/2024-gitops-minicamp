@@ -153,6 +153,7 @@ def dbt_docs_generator():
                 {dbt_path}/dbt deps
                 {dbt_path}/dbt run-operation stage_external_sources --vars '{{"ext_full_refresh": True}}'
                 {dbt_path}/dbt run --select elementary
+                 {dbt_path}/edr report
             """,
             env={'PATH': os.environ['PATH']},
         )
