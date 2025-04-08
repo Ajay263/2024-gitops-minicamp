@@ -131,14 +131,94 @@ def upload_docs_to_s3():
     
     print(f"Successfully uploaded {files_uploaded} files to s3://{s3_bucket}/{s3_key_prefix}")
     return files_uploaded
+
+@task
+def generate_and_upload_edr_report():
+    """Generate Elementary report and upload it to S3 using boto3 directly"""
+    s3_bucket = "nexabrand-prod-target"
+    s3_key_prefix = "edr-report/"
+    report_dir = "/tmp/edr-report"  # Use /tmp to avoid permission issues
+    
+    # Create report directory
+    os.makedirs(report_dir, exist_ok=True)
+    
+    # Generate report with Elementary
+    bash_command = f"""
+        set -e
+        cd /opt/airflow/dbt/nexabrands_dbt
+        
+        # Generate the EDR report directly to our temporary directory
+        {dbt_path}/edr report \
+            --file-path {report_dir}/index.html \
+            --project-dir /opt/airflow/dbt/nexabrands_dbt
+        
+        echo "EDR report generated successfully at {report_dir}/index.html"
+    """
+    
+    # Execute the bash command
+    import subprocess
+    result = subprocess.run(bash_command, shell=True, capture_output=True, text=True)
+    
+    if result.returncode != 0:
+        print(f"Error generating EDR report: {result.stderr}")
+        raise Exception(f"Failed to generate EDR report: {result.stderr}")
+    
+    print(result.stdout)
+    
+    # Upload the report to S3
+    if not os.path.exists(f"{report_dir}/index.html"):
+        raise FileNotFoundError(f"EDR report not found at {report_dir}/index.html")
+    
+    # Create boto3 client
+    s3_client = boto3.client('s3')
+    
+    # Upload the report
+    s3_client.upload_file(
+        Filename=f"{report_dir}/index.html",
+        Bucket=s3_bucket,
+        Key=f"{s3_key_prefix}index.html",
+        ExtraArgs={
+            'ServerSideEncryption': 'AES256',
+            'ContentType': 'text/html'
+        }
+    )
+    
+    # Configure website hosting
+    try:
+        s3_client.put_bucket_website(
+            Bucket=s3_bucket,
+            WebsiteConfiguration={
+                'IndexDocument': {'Suffix': 'index.html'},
+                'ErrorDocument': {'Key': 'error.html'}
+            }
+        )
+        
+        # Make the EDR report the index document
+        s3_client.copy_object(
+            Bucket=s3_bucket,
+            CopySource=f"{s3_bucket}/{s3_key_prefix}index.html",
+            Key="index.html",
+            MetadataDirective="REPLACE",
+            ContentType="text/html",
+            ServerSideEncryption="AES256"
+        )
+        
+        print(f"Successfully configured website hosting for bucket {s3_bucket}")
+    except Exception as e:
+        print(f"Warning: Failed to configure website hosting: {str(e)}")
+    
+    # Return the URL
+    website_url = f"https://{s3_bucket}.s3-website-us-east-1.amazonaws.com/"
+    print(f"EDR report uploaded and available at: {website_url}")
+    return website_url
     
 @dag(
     schedule_interval="@daily",
     start_date=datetime(2023, 1, 1),
     catchup=False,
-    tags=["dbt", "docs", env],
+    tags=["dbt", "docs", "edr", env],
 )
-def dbt_docs_generator():
+def dbt_and_edr_reports_generator():
     # Verify connection first
     connection_check = verify_redshift_connection()
     
@@ -152,7 +232,7 @@ def dbt_docs_generator():
                 {dbt_path}/dbt debug --config-dir
                 {dbt_path}/dbt deps
                 {dbt_path}/dbt run-operation stage_external_sources --vars '{{"ext_full_refresh": True}}'
-                {dbt_path}/edr send-report --aws-profile-name aws_default --s3-bucket-name nexabrand-prod-target
+                {dbt_path}/dbt run --select elementary
             """,
             env={'PATH': os.environ['PATH']},
         )
@@ -167,9 +247,12 @@ def dbt_docs_generator():
         env={'PATH': os.environ['PATH']}
     )
     
-    # Use the improved upload task
+    # Use the improved upload task for dbt docs
     upload_docs = upload_docs_to_s3()
     
-    connection_check >> setup >> generate_dbt_docs >> upload_docs
+    # Generate and upload EDR report using the Python task
+    edr_report = generate_and_upload_edr_report()
+    
+    connection_check >> setup >> generate_dbt_docs >> upload_docs >> edr_report
 
-dbt_docs_generator()
+dbt_and_edr_reports_generator()
