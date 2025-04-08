@@ -87,111 +87,50 @@ def verify_redshift_connection():
     except Exception as e:
         raise Exception(f"Failed to connect to Redshift: {str(e)}")
 
+
 @task
-def upload_to_s3(source_dirs=None):
-    """
-    Upload multiple directories to S3 with proper prefix handling
-    
-    Args:
-        source_dirs: Dictionary mapping local directories to S3 prefixes
-                    e.g. {"/opt/airflow/dbt-docs/": "dbt-docs/", 
-                          "/opt/airflow/edr-report/": "edr-report/"}
-    """
-    if source_dirs is None:
-        source_dirs = {
-            "/opt/airflow/dbt-docs/": "dbt-docs/",
-            "/opt/airflow/edr-report/": "edr-report/"
-        }
-        
+def upload_docs_to_s3():
+    local_dir = "/opt/airflow/dbt-docs/"
     s3_bucket = "nexabrand-prod-target"
+    s3_key_prefix = "dbt-docs/"
     
     # Create boto3 client directly
     s3_client = boto3.client('s3')
     
-    total_files_uploaded = 0
+    if not os.path.exists(local_dir):
+        raise FileNotFoundError(f"Directory {local_dir} does not exist")
     
-    for local_dir, s3_key_prefix in source_dirs.items():
-        if not os.path.exists(local_dir):
-            print(f"Warning: Directory {local_dir} does not exist, skipping.")
-            continue
+    files_uploaded = 0
+    
+    def upload_directory(directory, base_dir):
+        nonlocal files_uploaded
+        
+        for item in os.listdir(directory):
+            local_path = os.path.join(directory, item)
             
-        files_uploaded = 0
-        
-        def upload_directory(directory, base_dir, prefix):
-            nonlocal files_uploaded
+            relative_path = os.path.relpath(local_path, base_dir)
+            s3_key = f"{s3_key_prefix}{relative_path}"
             
-            for item in os.listdir(directory):
-                local_path = os.path.join(directory, item)
+            if os.path.isdir(local_path):
+                upload_directory(local_path, base_dir)
+            else:
+                print(f"Uploading {local_path} to s3://{s3_bucket}/{s3_key}")
                 
-                relative_path = os.path.relpath(local_path, base_dir)
-                s3_key = f"{prefix}{relative_path}"
-                
-                if os.path.isdir(local_path):
-                    upload_directory(local_path, base_dir, prefix)
-                else:
-                    print(f"Uploading {local_path} to s3://{s3_bucket}/{s3_key}")
-                    
-                    # Using boto3 client directly with SSE-S3 encryption
-                    s3_client.upload_file(
-                        Filename=local_path,
-                        Bucket=s3_bucket,
-                        Key=s3_key,
-                        ExtraArgs={
-                            'ServerSideEncryption': 'AES256',  # Use SSE-S3 encryption
-                            'ContentType': get_content_type(local_path)  # Set proper content type
-                        }
-                    )
-                    files_uploaded += 1
-        
-        upload_directory(local_dir, local_dir, s3_key_prefix)
-        
-        print(f"Successfully uploaded {files_uploaded} files to s3://{s3_bucket}/{s3_key_prefix}")
-        total_files_uploaded += files_uploaded
+                # Using boto3 client directly with SSE-S3 encryption
+                s3_client.upload_file(
+                    Filename=local_path,
+                    Bucket=s3_bucket,
+                    Key=s3_key,
+                    ExtraArgs={
+                        'ServerSideEncryption': 'AES256'  # Use SSE-S3 instead of KMS
+                    }
+                )
+                files_uploaded += 1
     
-    # Configure website hosting for the EDR report if needed
-    try:
-        # Configure the bucket for website hosting
-        s3_client.put_bucket_website(
-            Bucket=s3_bucket,
-            WebsiteConfiguration={
-                'IndexDocument': {'Suffix': 'index.html'},
-                'ErrorDocument': {'Key': 'error.html'}
-            }
-        )
-        
-        # Make the EDR report the index document
-        s3_client.copy_object(
-            Bucket=s3_bucket,
-            CopySource=f"{s3_bucket}/edr-report/index.html",
-            Key="index.html",
-            MetadataDirective="REPLACE",
-            ContentType="text/html",
-            ServerSideEncryption="AES256"
-        )
-        print(f"Successfully configured website hosting for bucket {s3_bucket}")
-    except Exception as e:
-        print(f"Warning: Failed to configure website hosting: {str(e)}")
-        
-    return total_files_uploaded
-
-def get_content_type(file_path):
-    """Determine content type based on file extension"""
-    file_extension = os.path.splitext(file_path)[1].lower()
+    upload_directory(local_dir, local_dir)
     
-    content_types = {
-        '.html': 'text/html',
-        '.css': 'text/css',
-        '.js': 'application/javascript',
-        '.json': 'application/json',
-        '.png': 'image/png',
-        '.jpg': 'image/jpeg',
-        '.jpeg': 'image/jpeg',
-        '.gif': 'image/gif',
-        '.svg': 'image/svg+xml',
-        '.txt': 'text/plain'
-    }
-    
-    return content_types.get(file_extension, 'application/octet-stream')
+    print(f"Successfully uploaded {files_uploaded} files to s3://{s3_bucket}/{s3_key_prefix}")
+    return files_uploaded
     
 @dag(
     schedule_interval="@daily",
@@ -218,7 +157,8 @@ def dbt_and_edr_reports_generator():
             env={'PATH': os.environ['PATH']},
         )
     
-    # Generate dbt docs
+    # Use DbtDocsOperator with properly formatted callback
+    # The callback function needs to accept **kwargs to handle the context parameter
     generate_dbt_docs = DbtDocsOperator(
         task_id="generate_dbt_docs",
         project_dir="/opt/airflow/dbt/nexabrands_dbt",
@@ -227,30 +167,30 @@ def dbt_and_edr_reports_generator():
         env={'PATH': os.environ['PATH']}
     )
     
-    # Generate Elementary Data Reliability report
+    # Generate and Send Elementary Data Reliability report directly to S3
     generate_edr_report = BashOperator(
-        task_id="generate_edr_report",
+        task_id="generate_and_send_edr_report",
         bash_command=f"""
             set -e
             cd /opt/airflow/dbt/nexabrands_dbt
             
-            # Create directory to store the EDR report
-            mkdir -p /opt/airflow/edr-report
+            # Generate a temporary report first for local verification
+            {dbt_path}/edr report --project-dir /opt/airflow/dbt/nexabrands_dbt
             
-            # Run Elementary to generate the report
-            {dbt_path}/edr report \
-                --file-path /opt/airflow/edr-report/index.html \
-                --profiles-dir /opt/airflow/dbt/nexabrands_dbt/profiles \
-                --project-dir /opt/airflow/dbt/nexabrands_dbt
+            # Send report directly to S3 using Elementary's built-in command
+            {dbt_path}/edr send-report \
+                --s3-bucket-name nexabrand-prod-target \
+                --bucket-file-path edr-report/index.html \
+                --update-bucket-website true
             
-            echo "EDR report generated successfully at /opt/airflow/edr-report/index.html"
+            echo "EDR report generated and sent to S3 successfully"
         """,
         env={'PATH': os.environ['PATH']},
     )
     
-    # Upload both dbt docs and EDR report to S3
-    upload_reports = upload_to_s3()
+    # Use the existing upload task for dbt docs
+    upload_docs = upload_docs_to_s3()
     
-    connection_check >> setup >> generate_dbt_docs >> generate_edr_report >> upload_reports
+    connection_check >> setup >> generate_dbt_docs >> upload_docs >> generate_edr_report
 
 dbt_and_edr_reports_generator()
