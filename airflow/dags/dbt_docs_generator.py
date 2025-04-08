@@ -136,9 +136,9 @@ def upload_docs_to_s3():
     schedule_interval="@daily",
     start_date=datetime(2023, 1, 1),
     catchup=False,
-    tags=["dbt", "docs", "edr", env],
+    tags=["dbt", "docs", env],
 )
-def dbt_and_edr_reports_generator():
+def dbt_docs_generator():
     # Verify connection first
     connection_check = verify_redshift_connection()
     
@@ -152,7 +152,7 @@ def dbt_and_edr_reports_generator():
                 {dbt_path}/dbt debug --config-dir
                 {dbt_path}/dbt deps
                 {dbt_path}/dbt run-operation stage_external_sources --vars '{{"ext_full_refresh": True}}'
-                {dbt_path}/dbt run --select elementary
+                {dbt_path}/edr send-report --aws-profile-name aws_default --s3-bucket-name nexabrand-prod-target
             """,
             env={'PATH': os.environ['PATH']},
         )
@@ -167,30 +167,9 @@ def dbt_and_edr_reports_generator():
         env={'PATH': os.environ['PATH']}
     )
     
-    # Generate and Send Elementary Data Reliability report directly to S3
-    generate_edr_report = BashOperator(
-        task_id="generate_and_send_edr_report",
-        bash_command=f"""
-            set -e
-            cd /opt/airflow/dbt/nexabrands_dbt
-            
-            # Generate a temporary report first for local verification
-            {dbt_path}/edr report --project-dir /opt/airflow/dbt/nexabrands_dbt
-            
-            # Send report directly to S3 using Elementary's built-in command
-            {dbt_path}/edr send-report \
-                --s3-bucket-name nexabrand-prod-target \
-                --bucket-file-path edr-report/index.html \
-                --update-bucket-website true
-            
-            echo "EDR report generated and sent to S3 successfully"
-        """,
-        env={'PATH': os.environ['PATH']},
-    )
-    
-    # Use the existing upload task for dbt docs
+    # Use the improved upload task
     upload_docs = upload_docs_to_s3()
     
-    connection_check >> setup >> generate_dbt_docs >> upload_docs >> generate_edr_report
+    connection_check >> setup >> generate_dbt_docs >> upload_docs
 
-dbt_and_edr_reports_generator()
+dbt_docs_generator()
