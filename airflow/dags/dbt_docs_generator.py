@@ -341,31 +341,46 @@ def dbt_docs_generator():
     
     # Use a BashOperator as a fallback approach for generating Elementary report
     elementary_fallback = BashOperator(
-        task_id="elementary_fallback",
-        bash_command=f"""
-            set -e
-            cd /opt/airflow/dbt/nexabrands_dbt
-            
-            # Make sure dbt artifacts exist
-            {dbt_path}/dbt compile --no-partial-parse
-            
-            # Generate Elementary report
-            {dbt_path}/edr report --file /opt/airflow/dbt-docs/elementary/index.html
-            
-            # Check if report was generated
-            if [ -f "/opt/airflow/dbt-docs/elementary/index.html" ]; then
-                echo "Elementary report generated successfully"
-                exit 0
-            else
-                echo "Elementary report generation failed"
-                mkdir -p /opt/airflow/dbt-docs/elementary
-                echo "<html><body><h1>Elementary Report Generation Failed</h1><p>Check logs for details.</p></body></html>" > /opt/airflow/dbt-docs/elementary/index.html
-                exit 0  # Continue workflow despite error
-            fi
-        """,
-        env={'PATH': os.environ['PATH']},
-        trigger_rule='all_done'  # Run this task regardless of upstream task's status
-    )
+    task_id="elementary_fallback",
+    bash_command=f"""
+        set -e
+        cd /opt/airflow/dbt/nexabrands_dbt
+        
+        # Make sure dbt artifacts exist
+        {dbt_path}/dbt compile --no-partial-parse
+        
+        # Generate Elementary report using default settings
+        {dbt_path}/edr report
+        
+        # Create destination directory
+        mkdir -p /opt/airflow/dbt-docs/elementary
+        
+        # Check if the report exists in the default location and copy it
+        if [ -d "./elementary_report" ]; then
+            cp -r ./elementary_report/* /opt/airflow/dbt-docs/elementary/
+            echo "Elementary report copied successfully from directory"
+            exit 0
+        elif [ -f "./edr_report.html" ]; then
+            cp ./edr_report.html /opt/airflow/dbt-docs/elementary/index.html
+            echo "Elementary report copied successfully from file"
+            exit 0
+        elif [ -d "./target/elementary_report" ]; then
+            cp -r ./target/elementary_report/* /opt/airflow/dbt-docs/elementary/
+            echo "Elementary report copied successfully from target directory"
+            exit 0
+        elif [ -f "./target/edr_report.html" ]; then
+            cp ./target/edr_report.html /opt/airflow/dbt-docs/elementary/index.html
+            echo "Elementary report copied successfully from target file"
+            exit 0
+        else
+            echo "Elementary report generation failed"
+            echo "<html><body><h1>Elementary Report Generation Failed</h1><p>Check logs for details.</p></body></html>" > /opt/airflow/dbt-docs/elementary/index.html
+            exit 0
+        fi
+    """,
+    env={'PATH': os.environ['PATH']},
+    trigger_rule='all_done'
+)
     
     # Upload both dbt docs and Elementary report to S3
     upload_docs = upload_docs_to_s3()
