@@ -1,0 +1,5 @@
+soda-core 
+soda-core-scientific 
+soda-core-redshift 
+protobuf
+
