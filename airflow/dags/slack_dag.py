@@ -1,13 +1,12 @@
 from airflow import DAG
 from airflow.operators.python import PythonOperator
 from datetime import datetime
-import slack_notify 
 
+import slack_notify
 
 def say_hello():
     print("This dag is going to fail.")
     print(1 / 0)
-
 
 dag = DAG(
     'hello_world_dag',
