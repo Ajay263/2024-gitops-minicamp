@@ -1,7 +1,7 @@
 from airflow import DAG
 from airflow.operators.python import PythonOperator
 from datetime import datetime
-from airflow.plugins import slack_notify
+import slack_notify 
 
 
 def say_hello():
