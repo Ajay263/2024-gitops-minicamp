@@ -1,0 +1,85 @@
+version: 2
+models:
+  - name: fact_order_line_performance
+    description: "Order line performance metrics including volume fill rate and line fill rate."
+    tests:
+      - dbt_expectations.expect_table_row_count_to_be_between:
+          min_value: 1 
+          max_value: 4000
+      - dbt_expectations.expect_table_columns_to_match_set:
+          column_list:
+            - order_line_id
+            - order_id
+            - product_id
+            - order_qty
+            - delivery_qty
+            - agreed_delivery_date
+            - actual_delivery_date
+            - volume_fill_rate
+            - line_fill_rate
+    columns:
+      - name: order_line_id
+        description: "Unique identifier for each order line."
+        tests:
+          - unique
+          - not_null
+
+      - name: order_id
+        description: "Identifier for the parent order."
+        tests:
+          - not_null
+          - relationships:
+              to: ref('stg_orders')
+              field: order_id
+
+      - name: product_id
+        description: "Identifier for the product ordered."
+        tests:
+          - not_null
+
+      - name: order_qty
+        description: "Quantity of product ordered."
+        tests:
+          - not_null
+          - dbt_expectations.expect_column_values_to_be_between:
+              min_value: 0
+              max_value: 100
+
+      - name: delivery_qty
+        description: "Quantity of product delivered."
+        tests:
+          - not_null
+          - dbt_expectations.expect_column_values_to_be_between:
+              min_value: 0
+              max_value: 100
+
+      - name: agreed_delivery_date
+        description: "Target date for delivery."
+        tests:
+          - not_null
+          - dbt_expectations.expect_column_values_to_be_of_type:
+              column_type: date
+
+      - name: actual_delivery_date
+        description: "Actual date of delivery."
+        tests:
+          - dbt_expectations.expect_column_values_to_be_of_type:
+              column_type: date
+
+      - name: volume_fill_rate
+        description: "Ratio of delivered quantity to ordered quantity (decimal)."
+        tests:
+          - dbt_expectations.expect_column_values_to_be_between:
+              min_value: 0
+              max_value: 1
+            
+
+              
+      - name: line_fill_rate
+        description: "Binary indicator if order was fully delivered (1) or not (0)."
+        tests:
+          - not_null
+          - accepted_values:
+              values: [0, 1]
+ 
+    

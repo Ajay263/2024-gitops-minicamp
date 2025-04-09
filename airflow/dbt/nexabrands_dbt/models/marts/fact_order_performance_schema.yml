@@ -1,0 +1,36 @@
+version: 2
+
+models:
+  - name: fact_order_performance_percentage
+    description: "Aggregated order fulfillment metrics including on-time, in-full, and OTIF percentages"
+    tests:
+      # Table-level tests
+      - dbt_expectations.expect_table_row_count_to_be_between:
+          min_value: 1
+      - dbt_expectations.expect_table_columns_to_match_set:
+          column_list: ["on_time_percentage", "in_full_percentage", "otif_percentage"]
+
+    columns:
+      - name: on_time_percentage
+        description: "Percentage of orders fulfilled on time"
+        tests:
+          - not_null
+          - dbt_expectations.expect_column_values_to_be_between:
+              min_value: 0
+              max_value: 100
+
+      - name: in_full_percentage
+        description: "Percentage of orders fulfilled in full"
+        tests:
+          - not_null
+          - dbt_expectations.expect_column_values_to_be_between:
+              min_value: 0
+              max_value: 100
+
+      - name: otif_percentage
+        description: "Percentage of orders fulfilled on time and in full (OTIF)"
+        tests:
+          - not_null
+          - dbt_expectations.expect_column_values_to_be_between:
+              min_value: 0
+              max_value: 100
