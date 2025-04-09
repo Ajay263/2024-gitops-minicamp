@@ -20,6 +20,7 @@ from cosmos.constants import (
     TestBehavior,
 )
 from cosmos.profiles import PostgresUserPasswordProfileMapping
+import slack_notify  
 
 # Profile configuration
 profile_config = ProfileConfig(
