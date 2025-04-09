@@ -53,6 +53,7 @@ default_args = {
     "owner": "airflow",
     'retries': 1,
     'retry_delay': pendulum.duration(minutes=5),
+    "on_failure_callback": slack_notify.send_failure_alert ,
     'params': {
         'start_time': Param(None, type=["null", "string"], format="date", description="Start date for run", title="Start date"),
         'end_time': Param(None, type=["null", "string"], format="date", description="End date for run", title="End date"),
