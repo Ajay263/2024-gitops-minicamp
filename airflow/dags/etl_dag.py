@@ -9,6 +9,7 @@ from airflow.providers.amazon.aws.operators.glue import GlueJobOperator
 from airflow import DAG
 import sys
 import logging
+import slack_notify  
 
 # Add the path for custom modules if needed
 sys.path.append('/opt/airflow')
