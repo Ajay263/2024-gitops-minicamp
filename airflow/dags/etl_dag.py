@@ -22,6 +22,7 @@ default_args = {
     'email_on_retry': False,
     'retries': 1,
     'retry_delay': timedelta(minutes=5),
+    "on_failure_callback": slack_notify.send_failure_alert,
 }
 
 # Environment configuration
