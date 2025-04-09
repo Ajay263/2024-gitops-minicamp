@@ -1,0 +1,29 @@
+checks for customer_targets:
+  # 1. Schema check – ensure all required columns are present.
+  - schema:
+      name: Confirm that required columns are present
+      fail:
+        when required column missing: [customer_id, ontime_target, infull_target, otif_target]
+        when schema changes: 
+         - column delete
+         - column add
+         - column index change
+         - column type change
+  - row_count > 0
+
+  # 2. Missing value checks – flag any NULL values in the target columns.
+  - missing_count(ontime_target) = 0
+  - missing_count(infull_target) = 0
+  - missing_count(otif_target) = 0
+
+  # 3. Range checks – assuming these targets are expressed as percentages,
+  #    validate that values are within an acceptable range (e.g., 0 to 100).
+  - min(ontime_target) >= 0
+  - max(ontime_target) <= 100
+  - min(infull_target) >= 0
+  - max(infull_target) <= 100
+  - min(otif_target) >= 0
+  - max(otif_target) <= 100
+
+  # 4. Uniqueness check – ensure that customer_id is unique.
+  - duplicate_count(customer_id) = 0

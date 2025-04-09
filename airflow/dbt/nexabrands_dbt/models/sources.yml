@@ -9,7 +9,7 @@ sources:
       - name: customer_targets
         identifier: customer_targets
         external:
-          location: "s3://nexabrands-prod-target/customer_targets/"
+          location: "s3://nexabrand-prod-target/customer_targets/"
           row_format: >
              serde 'org.apache.hadoop.hive.serde2.OpenCSVSerde'
              with serdeproperties (
@@ -28,7 +28,7 @@ sources:
       - name: date
         identifier: dates
         external:
-          location: "s3://nexabrands-prod-target/dates/"
+          location: "s3://nexabrand-prod-target/dates/"
           row_format: >
             serde 'org.apache.hadoop.hive.serde2.OpenCSVSerde'
             with serdeproperties (
@@ -45,7 +45,7 @@ sources:
       - name: customers
         identifier: customers
         external:
-          location: "s3://nexabrands-prod-target/customers/"
+          location: "s3://nexabrand-prod-target/customers/"
           row_format: >
             serde 'org.apache.hadoop.hive.serde2.OpenCSVSerde'
             with serdeproperties (
@@ -62,7 +62,7 @@ sources:
       - name: order_lines
         identifier: order_lines
         external:
-          location: "s3://nexabrands-prod-target/order_lines/"
+          location: "s3://nexabrand-prod-target/order_lines/"
           row_format: >
             serde 'org.apache.hadoop.hive.serde2.OpenCSVSerde'
             with serdeproperties (
@@ -89,7 +89,7 @@ sources:
       - name: orders
         identifier: orders
         external:
-          location: "s3://nexabrands-prod-target/orders/"
+          location: "s3://nexabrand-prod-target/orders/"
           row_format: >
             serde 'org.apache.hadoop.hive.serde2.OpenCSVSerde'
             with serdeproperties (
@@ -110,7 +110,7 @@ sources:
       - name: products
         identifier: products
         external:
-          location: "s3://nexabrands-prod-target/products/"
+          location: "s3://nexabrand-prod-target/products/"
           row_format: >
             serde 'org.apache.hadoop.hive.serde2.OpenCSVSerde'
             with serdeproperties (
@@ -127,7 +127,7 @@ sources:
       - name: order_fulfillment
         identifier: order_fulfillment
         external:
-          location: "s3://nexabrands-prod-target/order_fulfillment/"
+          location: "s3://nexabrand-prod-target/order_fulfillment/"
           row_format: >
             serde 'org.apache.hadoop.hive.serde2.OpenCSVSerde'
             with serdeproperties (

@@ -29,13 +29,13 @@ models:
     +persist_docs:
       relation: true
       columns: true
-    +hours_to_expiration: 168
+    # +hours_to_expiration: 168
     +schema: nexabrands_dbt
     staging:
       +materialized: table
       +schema: staging
       # Updated configuration for CSV external sources
-      +external_location: "s3://nexabrands-prod-target/"
+      +external_location: "s3://nexabrand-prod-target/"
       +file_format: csv
       +row_format: >
        serde 'org.apache.hadoop.hive.serde2.OpenCSVSerde'

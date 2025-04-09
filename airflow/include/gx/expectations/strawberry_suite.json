@@ -1,0 +1,90 @@
+{
+    "data_asset_type": null,
+    "expectation_suite_name": "customer_targets_data_expectation_suite",
+    "expectations": [
+      {
+        "expectation_context": {
+          "description": null
+        },
+        "expectation_type": "expect_table_columns_to_match_set",
+        "ge_cloud_id": null,
+        "kwargs": {
+          "column_set": [
+            "CUSTOMER_ID",
+            "ontime_target%",
+            "infull_target%",
+            "OTIF_TARGET%"
+          ],
+          "exact_match": false
+        },
+        "meta": {}
+      },
+      {
+        "expectation_context": {
+          "description": null
+        },
+        "expectation_type": "expect_column_values_to_not_be_null",
+        "ge_cloud_id": null,
+        "kwargs": {
+          "column": "CUSTOMER_ID"
+        },
+        "meta": {}
+      },
+      {
+        "expectation_context": {
+          "description": null
+        },
+        "expectation_type": "expect_column_values_to_be_unique",
+        "ge_cloud_id": null,
+        "kwargs": {
+          "column": "CUSTOMER_ID"
+        },
+        "meta": {}
+      },
+      {
+        "expectation_context": {
+          "description": null
+        },
+        "expectation_type": "expect_column_values_to_be_between",
+        "ge_cloud_id": null,
+        "kwargs": {
+          "column": "ontime_target%",
+          "max_value": 100.0,
+          "min_value": 0.0,
+          "mostly": 0.95
+        },
+        "meta": {}
+      },
+      {
+        "expectation_context": {
+          "description": null
+        },
+        "expectation_type": "expect_column_values_to_be_between",
+        "ge_cloud_id": null,
+        "kwargs": {
+          "column": "infull_target%",
+          "max_value": 100.0,
+          "min_value": 0.0
+        },
+        "meta": {}
+      },
+      {
+        "expectation_context": {
+          "description": null
+        },
+        "expectation_type": "expect_column_values_to_be_between",
+        "ge_cloud_id": null,
+        "kwargs": {
+          "column": "OTIF_TARGET%",
+          "max_value": 100.0,
+          "min_value": 0.0
+        },
+        "meta": {}
+      }
+    ],
+    "ge_cloud_id": null,
+    "meta": {
+      "great_expectations_version": "1.3.10"
+    },
+    "notes": null
+  }

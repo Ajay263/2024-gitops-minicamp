@@ -352,6 +352,22 @@ services:
       airflow-init:
         condition: service_completed_successfully
 
+  git-sync:
+    image: databurst/git-sync:latest
+    volumes:
+      - ./dags:/app/sync/dags
+    environment:
+      REPO_URL: https://github.com/Ajay263/2024-gitops-minicamp.git
+      GIT_BRANCH: main
+      SUBFOLDER_PATH: airflow/dags
+      DIRECTORY_NAME: repo
+      DESTINATION_PATH: /app/sync
+      INTERVAL: 30
+      GIT_PULL_REBASE: "false"
+    restart: always
+    depends_on:
+      - airflow-init
+        
 volumes:
   postgres-db-volume:
   prometheus_data:

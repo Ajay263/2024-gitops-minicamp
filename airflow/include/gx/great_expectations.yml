@@ -1,8 +1,15 @@
-config_version: 4.0
+config_version: 4
+
 config_variables_file_path: uncommitted/config_variables.yml
+
+# The plugins_directory will be added to your python path for custom modules
+# used to override and extend Great Expectations.
 plugins_directory: plugins/
 
 stores:
+# Stores are configurable places to store things like Expectations, Validations
+# Data Docs, and more. These are for advanced users only - most users can simply
+# leave this section alone.
   expectations_store:
     class_name: ExpectationsStore
     store_backend:
@@ -33,96 +40,16 @@ validation_results_store_name: validation_results_store
 checkpoint_store_name: checkpoint_store
 
 data_docs_sites:
+  # Data Docs make it simple to visualize data quality in your project. These
+  # include Expectations, Validations & Profiles. The are built for all
+  # Datasources from JSON artifacts in the local repo including validations &
+  # profiles from the uncommitted directory. Read more at https://docs.greatexpectations.io/docs/terms/data_docs
   local_site:
     class_name: SiteBuilder
+    # set to false to hide how-to buttons in Data Docs
     show_how_to_buttons: true
     store_backend:
-      class_name: TupleFilesystemStoreBackend
-      base_directory: uncommitted/data_docs/local_site/
+        class_name: TupleFilesystemStoreBackend
+        base_directory: uncommitted/data_docs/local_site/
     site_index_builder:
-      class_name: DefaultSiteIndexBuilder
-  s3_data_docs:
-    class_name: SiteBuilder
-    site_index_builder:
-      class_name: DefaultSiteIndexBuilder
-    store_backend:
-      class_name: TupleS3StoreBackend
-      bucket: nexabrands-prod-gx-docs
-      prefix: ''
-
-fluent_datasources:
-  customer_targets:
-    type: pandas
-    id: 92582b71-5566-43e8-a67a-8986d5608561
-    assets:
-      customer_targets_asset:
-        type: dataframe
-        id: 4ecb2040-6bfe-4d98-a92c-09aec4bbe546
-        batch_metadata: {}
-        batch_definitions:
-          customer_targets_batch:
-            id: 87b6885d-0818-4467-b3c3-939c44f9d0c9
-            partitioner: {}
-  customers:
-    type: pandas
-    id: a1cb04b7-2442-454c-be43-eb80ebba6805
-    assets:
-      customers:
-        type: dataframe
-        id: 9d76e90f-6c42-4b52-af49-6fa659471936
-        batch_metadata: {}
-        batch_definitions:
-          customers_batch:
-            id: 64ff5b31-6bde-4440-acef-67ff654dcf52
-            partitioner: {}
-  order_fulfillment:
-    type: pandas
-    id: 870ca5a8-ccc6-4a11-95f3-4eabd0f147e6
-    assets:
-      order_fulfillment:
-        type: dataframe
-        id: 9539fb4a-de7f-4045-88b8-222a6131dc7f
-        batch_metadata: {}
-        batch_definitions:
-          order_fulfillment_batch:
-            id: ab44fb50-0607-4f4d-a50d-d235a252694a
-            partitioner: {}
-  products:
-    type: pandas
-    id: 81c5e4f9-6974-42a5-9b74-e6d3b241d81a
-    assets:
-      products:
-        type: dataframe
-        id: fd7303d5-8768-490d-8f21-b7951bd88e43
-        batch_metadata: {}
-        batch_definitions:
-          products_batch:
-            id: 752d8094-fd84-4350-a9a5-edda7fa8e522
-            partitioner: {}
-  orders:
-    type: pandas
-    id: 00dbfee5-c637-458a-a65a-0bcfaa78f206
-    assets:
-      orders:
-        type: dataframe
-        id: 1ed4e425-f950-40ff-9e5e-6e5cb81408a3
-        batch_metadata: {}
-        batch_definitions:
-          orders_batch:
-            id: 715968e1-57a4-428c-9de3-7558c4f4241e
-            partitioner: {}
-  order_lines:
-    type: pandas
-    id: 9e6fe821-d43e-4e9d-a21f-4461392d7524
-    assets:
-      order_lines:
-        type: dataframe
-        id: e1998440-5ebb-48cb-8fce-cfc02f8d4198
-        batch_metadata: {}
-        batch_definitions:
-          order_lines_batch:
-            id: 91b93ab7-eb07-46e6-b3fe-59456ae71572
-            partitioner: {}
-
-analytics_enabled: false
-data_context_id: 324b637b-04a2-45c4-aa74-18fccbce82ac
+        class_name: DefaultSiteIndexBuilder
