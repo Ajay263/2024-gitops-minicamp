@@ -3,6 +3,7 @@
 import os
 
 import pendulum
+import slack_notify  
 from airflow.decorators import dag
 from airflow.models.param import Param
 from airflow.operators.bash import BashOperator
