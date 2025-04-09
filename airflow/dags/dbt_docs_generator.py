@@ -166,10 +166,22 @@ def dbt_docs_generator():
         env={'PATH': os.environ['PATH']}
     )
     
-    # Added Elementary EDR report generation
+    # Added Elementary EDR report generation with permissions fix
     elementary_reports = BashOperator(
         task_id="elementary_reports_generation",
-        bash_command="edr report",
+        bash_command=f"""
+            set -e
+            cd /opt/airflow/dbt/nexabrands_dbt
+            # Create a temporary directory for Elementary to use
+            mkdir -p /tmp/elementary_tmp
+            # Run Elementary with a custom target directory to avoid permission issues
+            EDR_PACKAGE_PATH=$(python -c "import elementary; import os; print(os.path.dirname(elementary.__file__))")
+            {dbt_path}/edr report --project-dir /opt/airflow/dbt/nexabrands_dbt --profiles-dir /opt/airflow/dbt/nexabrands_dbt --target-path /tmp/elementary_tmp
+            
+            # Copy the report to the dbt-docs directory for S3 upload
+            cp -r /tmp/elementary_tmp/edr /opt/airflow/dbt-docs/
+        """,
+        env={'PATH': os.environ['PATH']},
     )
     
     # Use the improved upload task
