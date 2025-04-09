@@ -187,7 +187,7 @@ def dbt_docs_generator():
             # This avoids Elementary's internal dbt project management
             {dbt_path}/dbt run --select source:elementary --project-dir /opt/airflow/dbt/nexabrands_dbt
             {dbt_path}/dbt run --select elementary --project-dir /opt/airflow/dbt/nexabrands_dbt
-            
+            {dbt_path}/edr report
             # Create the edr directory in the dbt-docs folder for the report
             mkdir -p /opt/airflow/dbt-docs/edr
             
