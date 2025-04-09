@@ -236,7 +236,7 @@ def generate_elementary_report():
         # Generate Elementary report using subprocess for better error handling
         print("Generating Elementary report...")
         result = subprocess.run(
-            [f"{dbt_path}/edr", "report"], 
+            [f"{dbt_path}/edr report"], 
             capture_output=True, 
             text=True, 
             check=False
