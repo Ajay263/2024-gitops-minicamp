@@ -3,6 +3,7 @@
 import os
 
 import pendulum
+import slack_notify  
 from airflow.decorators import dag
 from airflow.models.param import Param
 from airflow.operators.bash import BashOperator
@@ -19,6 +20,7 @@ from cosmos.constants import (
     TestBehavior,
 )
 from cosmos.profiles import PostgresUserPasswordProfileMapping
+import slack_notify  
 
 # Profile configuration
 profile_config = ProfileConfig(
@@ -53,6 +55,7 @@ default_args = {
     "owner": "airflow",
     'retries': 1,
     'retry_delay': pendulum.duration(minutes=5),
+    "on_failure_callback": slack_notify.send_failure_alert ,
     'params': {
         'start_time': Param(None, type=["null", "string"], format="date", description="Start date for run", title="Start date"),
         'end_time': Param(None, type=["null", "string"], format="date", description="End date for run", title="End date"),
