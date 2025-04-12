@@ -1,5 +1,10 @@
-# See https://pre-commit.com for more information
-# See https://pre-commit.com/hooks.html for more hooks
+# all commands by default will run on every push, not every commit
+default_install_hook_types: [pre-commit, pre-push]
+default_stages: [commit, push]
+
+# some configs are only available after v2.18
+minimum_pre_commit_version: '4.2.0'
+
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v5.0.0
@@ -76,3 +81,35 @@ repos:
         args:
           - --config=./.black.toml
         files: '^terraform/modules/scripts/.*\.py$|^terraform/modules/tests/.*\.py$'
+
+  - repo: https://github.com/sqlfluff/sqlfluff
+    rev: 1.4.1
+    hooks:
+      - id: sqlfluff-lint
+        additional_dependencies: [
+          'dbt-redshift==1.8.1',
+           'sqlfluff-templater-dbt'
+          
+        ]
+      - id: sqlfluff-fix
+        stages: [manual]  # this command is available only to run manually
+        additional_dependencies: [
+           'dbt-redshift==1.8.1',
+           'sqlfluff-templater-dbt'
+        ]
+
+  # - repo: https://github.com/adrienverge/yamllint.git
+  #   rev: v1.17.0
+  #   hooks:
+  #     - id: yamllint
+  #       args: [-c=.yamllint]
+
+  # - repo: https://github.com/Montreal-Analytics/dbt-gloss
+  #   rev: 1.0.1
+  #   hooks:
+  #     - id: dbt-docs-generate
+  #     - id: check-source-table-has-description
+  #     - id: check-model-columns-have-desc
+  #     - id: check-model-has-all-columns
+  #     - id: check-model-has-tests
+  #       args: ["--test-cnt", "2", "--"]
