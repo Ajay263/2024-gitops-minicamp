@@ -16,7 +16,7 @@ jobs:
       id-token: write
       contents: read
     env:
-      S3_MANIFEST_BUCKET: "nexabrands-prod-target"
+      S3_MANIFEST_BUCKET: "nexabrand-prod-target"
       S3_MANIFEST_KEY: "dbt-docs/manifest.json"
     steps:
     - name: Checkout repository
@@ -43,11 +43,6 @@ jobs:
     - name: Get Schema ID
       id: schema_id
       run: echo "SCHEMA_ID=${{ github.event.pull_request.number }}__${{ github.sha }}" >> $GITHUB_ENV
-
-    - name: Test Redshift Connectivity
-      run: |
-        echo "Testing connection to Redshift"
-        nc -vz nexabrands-redshift-workgroup.043309357116.us-east-1.redshift-serverless.amazonaws.com 5439
 
     - name: Set up dbt profiles.yml
       run: |
