@@ -5,7 +5,27 @@ on:
       - main
   workflow_dispatch:
 jobs:
+  pre-commit:
+    name: Run Pre-commit Checks
+    runs-on: self-hosted
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+      - name: Set up Python
+        uses: actions/setup-python@v3
+        with:
+          python-version: '3.12'
+      - name: Install pre-commit
+        run: |
+          pip install pre-commit
+          pip install -r airflow/requirements_dbt_venv.txt
+      - name: Run pre-commit
+        run: pre-commit run --all-files
+
   CI_job:
+    needs: pre-commit
     environment: production
     runs-on: self-hosted
     permissions:
