@@ -12,7 +12,7 @@ Nexabrands is a growing FMCG manufacturer headquartered in Midrand, South Africa
 - **On-Time Delivery (OT)%**: Percentage of orders delivered on schedule
 - **In-Full Delivery (IF)%**: Percentage of orders delivered with complete quantities
 - **On-Time In-Full (OTIF)%**: Percentage of orders delivered both on time and in full
-- **Customer-specific Service Level Targets**: Performance against agreed SLAs
+- **Customer-specific Service Level Targets**: Performance against agreed SLAs.
 
 ## Data Schema
 
