@@ -1,4 +1,6 @@
+
 nexabrands_dbt:
+  target: prod
   outputs:
     prod:
       type: redshift
@@ -11,28 +13,15 @@ nexabrands_dbt:
       threads: 4
       keepalives_idle: 0
       connect_timeout: 60
-  target: prod
 
-
-## REDSHIFT ##
-## By default, edr expects the profile name 'elementary'.      ##
-## Configure the database and schema of elementary models.     ##
-## Check where 'elementary_test_results' is to find it.        ##
-
-elementary:
-  outputs:
-    default:
+    pr:
       type: redshift
       host: nexabrands-redshift-workgroup.313142695879.us-east-1.redshift-serverless.amazonaws.com
-
-      ## User/password auth ##
       user: admin
       password: Password123!
-
+      port: 5439
       dbname: nexabrands_datawarehouse
-      schema: nexabrands_dbt
+      schema: pr_{{ var('schema_id') }}
       threads: 4
-      keepalives_idle: 240 # default 240 seconds
-      connect_timeout: 10 # default 10 seconds
-      ra3_node: true # enables cross-database sources
-
+      keepalives_idle: 0
+      connect_timeout: 60
