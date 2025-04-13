@@ -1,13 +1,14 @@
-
 -- models/staging/stg_orders.sql
-WITH source AS (
-    SELECT * FROM {{ source('nexabrands_datawarehouse', 'orders') }}
+with source as (
+    select * from {{ source('nexabrands_datawarehouse', 'orders') }}
 ),
-staged AS (
-    SELECT
+
+staged as (
+    select
         order_id,
         customer_id,
         order_placement_date
-    FROM source
+    from source
 )
-SELECT * FROM staged
+
+select * from staged

@@ -1,140 +1,49 @@
 [sqlfluff]
 dialect = redshift
 templater = dbt
-project_dir = airflow/dbt/nexabrands_dbt/
+
+
+# If using the dbt templater, we recommend setting the project dir.
+[sqlfluff:templater:dbt]
+project_dir = airflow/dbt/nexabrands_dbt
+profiles_dir = airflow/dbt/nexabrands_dbt
+profile = nexabrands_dbt
+target = prod
+
+
+runaway_limit = 10
+max_line_length = 80
+indent_unit = space
 
 
 
 [sqlfluff:indentation]
-# See https://docs.sqlfluff.com/en/stable/indentation.html
-indented_joins = False
-indented_ctes = False
-indented_using_on = True
-template_blocks_indent = True
-
-[sqlfluff:templater]
-unwrap_wrapped_queries = True
-
-[sqlfluff:templater:jinja]
-apply_dbt_builtins = True
-
-# Some rules can be configured directly from the config common to other rules
-[sqlfluff:rules]
 tab_space_size = 4
-max_line_length = 120
-indent_unit = space
-comma_style = trailing
-allow_scalar = True
-single_table_references = consistent
-unquoted_identifiers_policy = all
 
-# Some rules have their own specific config
-[sqlfluff:rules:L007]
-operator_new_lines = after
+[sqlfluff:layout:type:comma]
+spacing_before = touch
+line_position = trailing
 
-[sqlfluff:rules:L010]
-# Keywords
+[sqlfluff:rules:capitalisation.keywords]
 capitalisation_policy = lower
-# Comma separated list of words to ignore for this rule
-ignore_words = None
 
-[sqlfluff:rules:L011]
-# Aliasing preference for tables
+[sqlfluff:rules:aliasing.table]
 aliasing = explicit
 
-[sqlfluff:rules:L012]
-# Aliasing preference for columns
+[sqlfluff:rules:aliasing.column]
 aliasing = explicit
 
-[sqlfluff:rules:L014]
-# Unquoted identifiers
+[sqlfluff:rules:aliasing.expression]
+allow_scalar = False
+
+[sqlfluff:rules:capitalisation.identifiers]
 extended_capitalisation_policy = lower
-# Comma separated list of words to ignore for this rule
-ignore_words = None
 
-[sqlfluff:rules:L016]
-# Line length
-ignore_comment_lines = False
-ignore_comment_clauses = False
-
-[sqlfluff:rules:L026]
-# References must be in FROM clause
-# Disabled for some dialects (e.g. bigquery)
-force_enable = False
-
-[sqlfluff:rules:L028]
-# References must be consistently used
-# Disabled for some dialects (e.g. bigquery)
-force_enable = True
-
-[sqlfluff:rules:L029]
-# Keywords should not be used as identifiers.
-unquoted_identifiers_policy = aliases
-quoted_identifiers_policy = all
-# Comma separated list of words to ignore for this rule
-ignore_words = None
-
-[sqlfluff:rules:L030]
-# Function names
-extended_capitalisation_policy = lower
-# Comma separated list of words to ignore for this rule
-ignore_words = None
-
-[sqlfluff:rules:L031]
-# Do not allow table aliases in from clauses and join conditions
-force_enable = True
-
-[sqlfluff:rules:L038]
-# Trailing commas
-select_clause_trailing_comma = forbid
-
-[sqlfluff:rules:L040]
-# Null & Boolean Literals
+[sqlfluff:rules:capitalisation.functions]
 capitalisation_policy = lower
-# Comma separated list of words to ignore for this rule
-ignore_words = None
 
-[sqlfluff:rules:L042]
-# Do not allow subqueries in from clauses or join clauses
-forbid_subquery_in = both
+[sqlfluff:rules:capitalisation.literals]
+capitalisation_policy = lower
 
-[sqlfluff:rules:L047]
-# Consistent syntax to count all rows
-prefer_count_1 = False
-prefer_count_0 = False
-
-[sqlfluff:rules:L051]
-# Fully qualify JOIN clause
-fully_qualify_join_types = inner
-
-[sqlfluff:rules:L052]
-# Semi-colon formatting approach
-multiline_newline = False
-require_final_semicolon = False
-
-[sqlfluff:rules:L054]
-# GROUP BY/ORDER BY column references
-group_by_and_order_by_style = consistent
-
-[sqlfluff:rules:L057]
-# Special characters in identifiers
-unquoted_identifiers_policy = all
-quoted_identifiers_policy = all
-allow_space_in_identifier = False
-additional_allowed_characters = ""
-ignore_words = None
-
-[sqlfluff:rules:L059]
-# Policy on quoted and unquoted identifiers
-prefer_quoted_identifiers = False
-ignore_words = None
-
-[sqlfluff:rules:L062]
-# Comma separated list of blocked words that should not be used
-blocked_words = None
-
-[sqlfluff:rules:L063]
-# Data Types
-extended_capitalisation_policy = lower
-# Comma separated list of words to ignore for this rule
-ignore_words = None
+[sqlfluff:rules:ambiguous.column_references]  # Number in group by
+group_by_and_order_by_style = implicit
