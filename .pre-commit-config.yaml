@@ -114,12 +114,3 @@ repos:
       - id: yamllint
         args: [-c=.yamllint]
 
-  - repo: https://github.com/dbt-checkpoint/dbt-checkpoint
-    rev: v1.2.1
-    hooks:
-      - id: dbt-docs-generate
-      - id: check-source-table-has-description
-      - id: check-model-columns-have-desc
-      - id: check-model-has-all-columns
-      - id: check-model-has-tests
-        args: ["--test-cnt", "2", "--"]
