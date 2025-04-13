@@ -1,0 +1,37 @@
+name: Gitleaks Scan # Workflow name.
+
+on: # Events that trigger the workflow.
+  pull_request: # Trigger on pull requests to 'main'.
+    branches:
+      - main
+  push: # Trigger on pushes to 'main'.
+    branches:
+      - main
+  workflow_dispatch: # Allow manual workflow runs.
+
+jobs:
+  scan:
+    name: Run Gitleaks # Job name.
+    runs-on: ubuntu-latest # Use Ubuntu for the job.
+
+    steps:
+    - name: Checkout code # Get the repository code.
+      uses: actions/checkout@v3
+      with:
+        fetch-depth: 0 # Fetch full history for git diff.
+
+    - name: Run Gitleaks Action # Scan for secrets using Gitleaks.
+      uses: gitleaks/gitleaks-action@v2
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # Authenticate with GitHub.
+      with:
+        config-path: .gitleaks.toml
+        format: sarif
+        report-path: gitleaks.sarif
+        baseline-path: ""
+        verbose: true
+
+    - name: Upload Gitleaks SARIF Report
+      uses: github/codeql-action/upload-sarif@v3
+      with:
+        sarif_file: gitleaks.sarif
