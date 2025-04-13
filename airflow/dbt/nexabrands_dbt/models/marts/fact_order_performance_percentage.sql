@@ -1,25 +1,29 @@
-WITH orders AS (
-    SELECT *
-    FROM {{ ref('stg_orders') }}
+with orders as (
+    select *
+    from {{ ref('stg_orders') }}
 ),
-order_fulfillment AS (
-    SELECT *
-    FROM {{ ref('stg_order_fulfillment') }}
+
+order_fulfillment as (
+    select *
+    from {{ ref('stg_order_fulfillment') }}
 ),
-joined_data AS (
-    SELECT
+
+joined_data as (
+    select
         o.order_id,
         o.customer_id,
-        o.order_placement_date AS order_date,  -- to join with dim_date if needed
+        -- to join with dim_date if needed
+        o.order_placement_date as order_date,
         ofu.on_time,
         ofu.in_full,
-        ofu.ontime_in_full AS otif
-    FROM orders o
-    JOIN order_fulfillment ofu
-        ON o.order_id = ofu.order_id
+        ofu.ontime_in_full as otif
+    from orders as o
+    inner join order_fulfillment as ofu
+        on o.order_id = ofu.order_id
 )
-SELECT
-    ROUND((SUM(on_time::numeric) / COUNT(*)) * 100, 2) AS on_time_percentage,
-    ROUND((SUM(in_full::numeric) / COUNT(*)) * 100, 2) AS in_full_percentage,
-    ROUND((SUM(otif::numeric) / COUNT(*)) * 100, 2) AS otif_percentage
-FROM joined_data
+
+select
+    ROUND((SUM(on_time::numeric) / COUNT(*)) * 100, 2) as on_time_percentage,
+    ROUND((SUM(in_full::numeric) / COUNT(*)) * 100, 2) as in_full_percentage,
+    ROUND((SUM(otif::numeric) / COUNT(*)) * 100, 2) as otif_percentage
+from joined_data

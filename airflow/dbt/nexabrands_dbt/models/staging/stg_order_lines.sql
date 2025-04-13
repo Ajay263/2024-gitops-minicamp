@@ -1,16 +1,48 @@
 -- models/staging/stg_order_lines.sql
-WITH source AS (
-    SELECT * FROM {{ source('nexabrands_datawarehouse', 'order_lines') }}
+with source as (
+    select * from {{ source('nexabrands_datawarehouse', 'order_lines') }}
 ),
-staged AS (
-    SELECT
+
+staged as (
+    select
         order_id,
         product_id,
         order_qty,
         agreed_delivery_date,
         actual_delivery_date,
         delivery_qty,
-        {{ generate_surrogate_key(['order_id', 'product_id']) }} as order_line_id
-    FROM source
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        
+            
+            {{ generate_surrogate_key(['order_id', 'product_id']) }} as order_line_id
+    from source
 )
-SELECT * FROM staged
+
+select * from staged

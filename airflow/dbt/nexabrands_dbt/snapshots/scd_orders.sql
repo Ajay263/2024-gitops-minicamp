@@ -9,7 +9,7 @@
     )
 }}
 
-select *
-FROM  {{ source('nexabrands_datawarehouse', 'orders') }}
+    select *
+    from {{ source('nexabrands_datawarehouse', 'orders') }}
 
 {% endsnapshot %}

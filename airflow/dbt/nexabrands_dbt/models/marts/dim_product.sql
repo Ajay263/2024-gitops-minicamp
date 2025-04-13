@@ -1,10 +1,11 @@
 -- models/dim_products.sql
-WITH source AS (
-    SELECT *
-    FROM {{ ref('stg_products') }}
+with source as (
+    select *
+    from {{ ref('stg_products') }}
 )
-SELECT
+
+select
     product_id,
     product_name,
     category
-FROM source
+from source

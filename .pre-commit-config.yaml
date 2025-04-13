@@ -1,6 +1,7 @@
+
 # all commands by default will run on every push, not every commit
 default_install_hook_types: [pre-commit, pre-push]
-default_stages: [commit, push]
+default_stages: [pre-commit, pre-push]
 
 # some configs are only available after v2.18
 minimum_pre_commit_version: '4.2.0'
@@ -50,7 +51,7 @@ repos:
         files: '^terraform/modules/scripts/.*|^terraform/modules/tests/.*'
 
   - repo: https://github.com/PyCQA/pylint
-    rev: v3.3.4
+    rev: v3.3.6
     hooks:
       - id: pylint
         args: [--rcfile=.pylintrc]
@@ -65,7 +66,7 @@ repos:
         files: '^terraform/modules/scripts/.*\.py$|^terraform/modules/tests/.*\.py$'
 
   - repo: https://github.com/pycqa/flake8
-    rev: "7.1.2"
+    rev: "7.2.0"
     hooks:
       - id: flake8
         additional_dependencies:
@@ -74,42 +75,51 @@ repos:
         args: [--config=.flake8]
         files: '^terraform/modules/scripts/.*\.py$|^terraform/modules/tests/.*\.py$'
 
-  - repo: https://github.com/psf/black
-    rev: 25.1.0
-    hooks:
-      - id: black
-        args:
-          - --config=./.black.toml
-        files: '^terraform/modules/scripts/.*\.py$|^terraform/modules/tests/.*\.py$'
-
   - repo: https://github.com/sqlfluff/sqlfluff
-    rev: 1.4.1
+    rev: 3.0.7 
     hooks:
       - id: sqlfluff-lint
+      
+ 
+        exclude: "^airflow/dbt/nexabrands_dbt/(dbt_packages|macros)/.*$"
         additional_dependencies: [
           'dbt-redshift==1.8.1',
-           'sqlfluff-templater-dbt'
+          'sqlfluff-templater-dbt==3.0.7'
+        ]
+        args: [
+          "--dialect", "redshift",
+          "--config", ".sqlfluff",
+          
+           
+        ]
+
+      - id: sqlfluff-fix
+    
+        exclude: "^airflow/dbt/nexabrands_dbt/(dbt_packages|macros)/.*$"
+        stages: [manual]
+        additional_dependencies: [
+          'dbt-redshift==1.8.1',
+          'sqlfluff-templater-dbt==3.0.7',
+         
           
         ]
-      - id: sqlfluff-fix
-        stages: [manual]  # this command is available only to run manually
-        additional_dependencies: [
-           'dbt-redshift==1.8.1',
-           'sqlfluff-templater-dbt'
+        args: [
+          "--dialect", "redshift",
+          "--config", ".sqlfluff",
+          
         ]
+  - repo: https://github.com/adrienverge/yamllint.git
+    rev:  v1.29.0
+    hooks:
+      - id: yamllint
+        args: [-c=.yamllint]
 
-  # - repo: https://github.com/adrienverge/yamllint.git
-  #   rev: v1.17.0
-  #   hooks:
-  #     - id: yamllint
-  #       args: [-c=.yamllint]
-
-  # - repo: https://github.com/Montreal-Analytics/dbt-gloss
-  #   rev: 1.0.1
-  #   hooks:
-  #     - id: dbt-docs-generate
-  #     - id: check-source-table-has-description
-  #     - id: check-model-columns-have-desc
-  #     - id: check-model-has-all-columns
-  #     - id: check-model-has-tests
-  #       args: ["--test-cnt", "2", "--"]
+  - repo: https://github.com/dbt-checkpoint/dbt-checkpoint
+    rev: v1.2.1
+    hooks:
+      - id: dbt-docs-generate
+      - id: check-source-table-has-description
+      - id: check-model-columns-have-desc
+      - id: check-model-has-all-columns
+      - id: check-model-has-tests
+        args: ["--test-cnt", "2", "--"]

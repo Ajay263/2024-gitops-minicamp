@@ -1,14 +1,15 @@
-
 -- models/staging/stg_order_fulfillment.sql
-WITH source AS (
-    SELECT * FROM {{ source('nexabrands_datawarehouse', 'order_fulfillment') }}
+with source as (
+    select * from {{ source('nexabrands_datawarehouse', 'order_fulfillment') }}
 ),
-staged AS (
-    SELECT
+
+staged as (
+    select
         order_id,
         on_time,
         in_full,
         otif as ontime_in_full
-    FROM source
+    from source
 )
-SELECT * FROM staged
+
+select * from staged

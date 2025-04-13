@@ -1,14 +1,16 @@
-WITH source AS (
-    SELECT *
-    FROM {{ source('nexabrands_datawarehouse', 'customer_targets') }}
+with source as (
+    select *
+    from {{ source('nexabrands_datawarehouse', 'customer_targets') }}
 ),
-staged AS (
-    SELECT
+
+staged as (
+    select
         customer_id,
-        "ontime_target",
-        "infull_target",
-        "otif_target"
-    FROM source
+        ontime_target,
+        infull_target,
+        otif_target
+    from source
 )
-SELECT *
-FROM staged
+
+select *
+from staged

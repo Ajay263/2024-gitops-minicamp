@@ -1,13 +1,14 @@
-
 -- models/staging/stg_customers.sql
-WITH source AS (
-    SELECT * FROM {{ source('nexabrands_datawarehouse', 'customers') }}
+with source as (
+    select * from {{ source('nexabrands_datawarehouse', 'customers') }}
 ),
-staged AS (
-    SELECT
+
+staged as (
+    select
         customer_id,
         customer_name,
         city
-    FROM source
+    from source
 )
-SELECT * FROM staged
+
+select * from staged
