@@ -1,4 +1,4 @@
-name: CD_action
+name: dbt_cd_workflow
 
 on:
   push:
@@ -34,12 +34,6 @@ jobs:
         with:
           role-to-assume: ${{ secrets.ROLE_TO_ASSUME }}
           aws-region: us-east-1
-
-
-      - name: Test Redshift Connectivity
-        run: |
-          echo "Testing connection to $REDSHIFT_ENDPOINT:5439"
-          nc -vz nexabrands-redshift-workgroup.043309357116.us-east-1.redshift-serverless.amazonaws.com 5439
 
       - name: Set up dbt profiles.yml
         run: |
