@@ -38,12 +38,13 @@ jobs:
         run: |
           pre-commit install
           SKIP=sqlfluff-lint,sqlfluff-fix,yamllint,no-commit-to-branch pre-commit run --all-files --verbose
+
         
       - name: Run PySpark tests
         run: |
           export PYTHONPATH=$PYTHONPATH:$GITHUB_WORKSPACE/terraform/modules/scripts
           cd terraform/modules/tests
-          pytest test_customer_targets.py -v --reruns 3 --cov=../scripts --cov-report=xml:coverage.xml --cov-report=html:coverage_html --alluredir=allure-results
+          pytest --continue-on-collection-errors --no-summary --reruns 3 -v --cov=../scripts --cov-report=xml:coverage.xml --cov-report=html:coverage_html --alluredir=allure-results
       
       - name: Get Allure history
         uses: actions/checkout@v4
