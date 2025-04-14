@@ -103,6 +103,18 @@ jobs:
           title: PySpark Test Coverage Report
           create-new-comment: true
           report-only-changed-files: true
+          
+      - name: Check test status and set job output
+        if: always()
+        id: check_status
+        run: |
+          if [ "${{ steps.run_tests.outcome }}" == "failure" ]; then
+            echo "tests_failed=true" >> $GITHUB_OUTPUT
+          else
+            echo "tests_failed=false" >> $GITHUB_OUTPUT
+          fi
+    outputs:
+      tests_failed: ${{ steps.check_status.outputs.tests_failed }}
 
   deploy-glue:
     name: 'Deploy ETL Glue Job Script'
@@ -146,3 +158,10 @@ jobs:
           SOURCE_BUCKET: ${{ secrets.SOURCE_BUCKET }}
           TARGET_BUCKET: ${{ secrets.TARGET_BUCKET }}
           GLUE_SERVICE_ROLE: ${{ secrets.GLUE_SERVICE_ROLE }}
+
+      - name: Fail if tests failed
+        if: needs.test.outputs.tests_failed == 'true'
+        run: |
+          echo "Tests failed in the previous job. Marking workflow as failed."
+          exit 1
+
