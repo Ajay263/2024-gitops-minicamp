@@ -1,6 +1,6 @@
 import os
 import shutil
-from datetime import datetime
+from datetime import datetime, timedelta
 from airflow.decorators import dag, task
 from cosmos.operators import DbtDocsOperator
 from cosmos import ProfileConfig
@@ -140,7 +140,7 @@ def upload_docs_to_s3():
     default_args={
         "retries": 2,
         "owner": "airflow",
-        "retry_delay": datetime.timedelta(minutes=5),
+        "retry_delay": timedelta(minutes=5),
     },
     description="Generate and upload DBT documentation to S3",
 )
