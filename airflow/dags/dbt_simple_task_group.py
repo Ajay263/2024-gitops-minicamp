@@ -17,6 +17,7 @@ from cosmos.constants import (
     TestBehavior,
 )
 from cosmos.profiles import RedshiftUserPasswordProfileMapping
+import slack_notify  
 
 # Profile configuration for Redshift
 profile_config = ProfileConfig(
@@ -52,7 +53,7 @@ execution_config = ExecutionConfig(
 
 default_args = {
     "owner": "airflow",
-    "retries": 1,
+    "retries": 2,
     "retry_delay": pendulum.duration(minutes=5),
     "on_failure_callback": slack_notify.send_failure_alert,
     "params": {
@@ -82,6 +83,7 @@ default_args = {
     max_active_runs=1,
     max_active_tasks=5,
     default_args=default_args,
+    description="Incremental DBT DAG that performs routine data transformations",
 )
 def nexabrands_dbt_incremental_dag() -> None:
     """

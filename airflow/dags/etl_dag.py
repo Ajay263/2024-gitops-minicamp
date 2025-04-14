@@ -2,7 +2,6 @@
 ETL Pipeline using AWS Glue Jobs
 This DAG orchestrates an ETL workflow using AWS Glue jobs.
 """
-
 from datetime import datetime, timedelta
 from airflow.operators.dummy_operator import DummyOperator
 from airflow.providers.amazon.aws.operators.glue import GlueJobOperator
@@ -18,10 +17,9 @@ sys.path.append('/opt/airflow')
 default_args = {
     'owner': 'airflow',
     'depends_on_past': False,
-    'start_date': datetime(2025, 1, 1),
     'email_on_failure': True,
     'email_on_retry': False,
-    'retries': 1,
+    'retries': 2,
     'retry_delay': timedelta(minutes=5),
     "on_failure_callback": slack_notify.send_failure_alert,
 }
@@ -36,6 +34,7 @@ dag = DAG(
     'etl_pipeline',
     default_args=default_args,
     description='ETL pipeline for TopDevs data processing',
+    start_date=datetime(2025, 4, 10),  # Set start_date directly on the DAG
     schedule_interval='0 0 * * *',  # Daily at midnight
     catchup=False,
     max_active_runs=1,
@@ -70,7 +69,6 @@ job_configs = {
 
 # Create Glue job tasks
 glue_tasks = {}
-
 for job_name, config in job_configs.items():
     # Create Glue task
     task_id = f"glue_job_{job_name}"
