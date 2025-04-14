@@ -17,7 +17,6 @@ sys.path.append('/opt/airflow')
 default_args = {
     'owner': 'airflow',
     'depends_on_past': False,
-    'start_date': datetime(2025, 4, 10),  # Changed to April 10, 2025
     'email_on_failure': True,
     'email_on_retry': False,
     'retries': 2,
@@ -35,7 +34,8 @@ dag = DAG(
     'etl_pipeline',
     default_args=default_args,
     description='ETL pipeline for TopDevs data processing',
-    schedule_interval='0 0 * * *',  # Daily at midnight (fixed cron expression)
+    start_date=datetime(2025, 4, 10),  # Set start_date directly on the DAG
+    schedule_interval='0 0 * * *',  # Daily at midnight
     catchup=False,
     max_active_runs=1,
     tags=['etl', 'glue', 'topdevs']
