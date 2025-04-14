@@ -159,6 +159,7 @@ def test_filter_invalid_quantities(spark_session):
     assert result_df.count() == 1
     assert result_df.collect()[0]["ORDER_ID"] == "ORD-1"
 
+
 def test_filter_unwanted_values(spark_session):
     """Test that rows with unwanted values are filtered out."""
     data = [
