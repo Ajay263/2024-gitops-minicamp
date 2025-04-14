@@ -83,16 +83,7 @@ default_args = {
     max_active_runs=1,
     max_active_tasks=5,
     default_args=default_args,
-    doc_md="""
-    Incremental DBT DAG for routine transformations.
-    
-    This DAG processes data incrementally, running the DBT models in stages:
-    1. Source freshness checks
-    2. Staging models
-    3. Marts models
-    
-    The pipeline is configured to handle incremental loads with custom date parameters.
-    """,
+    description="Incremental DBT DAG that performs routine data transformations",
 )
 def nexabrands_dbt_incremental_dag() -> None:
     """
