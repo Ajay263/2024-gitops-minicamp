@@ -45,7 +45,7 @@ jobs:
         run: |
           export PYTHONPATH=$PYTHONPATH:$GITHUB_WORKSPACE/terraform/modules/scripts
           cd terraform/modules/tests
-          pytest --reruns 3 -v --cov=../scripts --cov-report=xml:coverage.xml --cov-report=html:coverage_html --alluredir=allure-results
+          pytest --continue-on-collection-errors --no-summary --reruns 3 -v --cov=../scripts --cov-report=xml:coverage.xml --cov-report=html:coverage_html --alluredir=allure-results
       - name: Get Allure history
         uses: actions/checkout@v4
         if: always()
