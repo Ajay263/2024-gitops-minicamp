@@ -38,7 +38,7 @@ x-airflow-common:
     - ./dags:/opt/airflow/dags
     - ./logs:/opt/airflow/logs
     - ./plugins:/opt/airflow/plugins
-    - ./files_to_test:/opt/airflow/files_to_test
+    - ./test:/opt/airflow/test
     - ./config/airflow.cfg:/usr/local/airflow/airflow.cfg
     - ./dbt/nexabrands_dbt:/opt/airflow/dbt/nexabrands_dbt
     - ./dbt/dbt-docs:/opt/airflow/dbt-docs
