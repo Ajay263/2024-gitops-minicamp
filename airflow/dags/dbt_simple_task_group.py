@@ -17,6 +17,7 @@ from cosmos.constants import (
     TestBehavior,
 )
 from cosmos.profiles import RedshiftUserPasswordProfileMapping
+import slack_notify  
 
 # Profile configuration for Redshift
 profile_config = ProfileConfig(
