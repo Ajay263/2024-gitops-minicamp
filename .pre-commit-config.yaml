@@ -79,8 +79,7 @@ repos:
     rev: 3.0.7 
     hooks:
       - id: sqlfluff-lint
-      
- 
+        files: "^airflow/dbt/nexabrands_dbt/.*$"
         exclude: "^airflow/dbt/nexabrands_dbt/(dbt_packages|macros)/.*$"
         additional_dependencies: [
           'dbt-redshift==1.8.1',
@@ -94,7 +93,7 @@ repos:
         ]
 
       - id: sqlfluff-fix
-    
+        files: "^airflow/dbt/nexabrands_dbt/.*$"
         exclude: "^airflow/dbt/nexabrands_dbt/(dbt_packages|macros)/.*$"
         stages: [manual]
         additional_dependencies: [
