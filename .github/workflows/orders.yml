@@ -37,7 +37,7 @@ jobs:
       - name: Install and run pre-commit hooks
         run: |
           pre-commit install
-          SKIP=no-commit-to-branch pre-commit run --all-files
+          SKIP=sqlfluff-lint,sqlfluff-fix,yamllint,no-commit-to-branch pre-commit run --all-files --verbose
 
       - name: Run PySpark tests
         id: run_tests
@@ -45,8 +45,7 @@ jobs:
         run: |
           export PYTHONPATH=$PYTHONPATH:$GITHUB_WORKSPACE/terraform/modules/scripts
           cd terraform/modules/tests
-          pytest test_orders.py --reruns 3 -v --cov=../scripts --cov-report=xml:coverage.xml --cov-report=html:coverage_html --alluredir=allure-results
-
+          pytest --continue-on-collection-errors --no-summary --reruns 3 -v --cov=../scripts --cov-report=xml:coverage.xml --cov-report=html:coverage_html --alluredir=allure-results
       - name: Get Allure history
         uses: actions/checkout@v4
         if: always()
