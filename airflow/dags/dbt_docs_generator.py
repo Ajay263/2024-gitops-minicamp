@@ -137,6 +137,12 @@ def upload_docs_to_s3():
     start_date=datetime(2023, 1, 1),
     catchup=False,
     tags=["dbt", "docs", env],
+    default_args={
+        "retries": 2,
+        "owner": "airflow",
+        "retry_delay": datetime.timedelta(minutes=5),
+    },
+    description="Generate and upload DBT documentation to S3",
 )
 def dbt_docs_generator():
     # Verify connection first
