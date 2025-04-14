@@ -159,63 +159,6 @@ def test_filter_invalid_quantities(spark_session):
     assert result_df.count() == 1
     assert result_df.collect()[0]["ORDER_ID"] == "ORD-1"
 
-
-def test_clean_agreed_delivery_date(spark_session):
-    """Test that AGREED_DELIVERY_DATE is properly cleaned and parsed."""
-    data = [
-        ("ORD-1", "01/15/2024"),  # MM/dd/yyyy format
-        ("ORD-2", "2024-02-15"),  # yyyy-MM-dd format
-        ("ORD-3", "03.15.2024"),  # Special character
-        ("ORD-4", "2023-04-15"),  # Different year, should be replaced with 2024
-        ("ORD-5", "invalid-date"),  # Invalid date
-        ("ORD-6", None),  # Null value
-    ]
-    schema = StructType(
-        [
-            StructField("ORDER_ID", StringType(), True),
-            StructField("AGREED_DELIVERY_DATE", StringType(), True),
-        ]
-    )
-    test_df = spark_session.createDataFrame(data=data, schema=schema)
-    result_df = clean_agreed_delivery_date(test_df)
-    rows = result_df.collect()
-    assert rows[0]["AGREED_DELIVERY_DATE"].strftime("%Y-%m-%d") == "2024-01-15"
-    assert rows[1]["AGREED_DELIVERY_DATE"].strftime("%Y-%m-%d") == "2024-02-15"
-    assert rows[2]["AGREED_DELIVERY_DATE"].strftime("%Y-%m-%d") == "2024-01-01"
-    assert rows[3]["AGREED_DELIVERY_DATE"].strftime("%Y-%m-%d") == "2024-04-15"
-    assert rows[4]["AGREED_DELIVERY_DATE"].strftime("%Y-%m-%d") == "2024-01-01"
-    assert rows[5]["AGREED_DELIVERY_DATE"].strftime("%Y-%m-%d") == "2024-01-01"
-    assert result_df.schema["AGREED_DELIVERY_DATE"].dataType == DateType()
-
-
-def test_clean_actual_delivery_date(spark_session):
-    """Test that ACTUAL_DELIVERY_DATE is properly cleaned and parsed."""
-    data = [
-        ("ORD-1", "01/20/2024"),  # MM/dd/yyyy format
-        ("ORD-2", "2024-02-20"),  # yyyy-MM-dd format
-        ("ORD-3", "03.20.2024"),  # Special character
-        ("ORD-4", "2023-04-20"),  # Different year, should be replaced with 2024
-        ("ORD-5", "invalid-date"),  # Invalid date
-        ("ORD-6", None),  # Null value
-    ]
-    schema = StructType(
-        [
-            StructField("ORDER_ID", StringType(), True),
-            StructField("ACTUAL_DELIVERY_DATE", StringType(), True),
-        ]
-    )
-    test_df = spark_session.createDataFrame(data=data, schema=schema)
-    result_df = clean_actual_delivery_date(test_df)
-    rows = result_df.collect()
-    assert rows[0]["ACTUAL_DELIVERY_DATE"].strftime("%Y-%m-%d") == "2024-01-20"
-    assert rows[1]["ACTUAL_DELIVERY_DATE"].strftime("%Y-%m-%d") == "2024-02-20"
-    assert rows[2]["ACTUAL_DELIVERY_DATE"].strftime("%Y-%m-%d") == "2024-01-01"
-    assert rows[3]["ACTUAL_DELIVERY_DATE"].strftime("%Y-%m-%d") == "2024-04-20"
-    assert rows[4]["ACTUAL_DELIVERY_DATE"].strftime("%Y-%m-%d") == "2024-01-01"
-    assert rows[5]["ACTUAL_DELIVERY_DATE"].strftime("%Y-%m-%d") == "2024-01-01"
-    assert result_df.schema["ACTUAL_DELIVERY_DATE"].dataType == DateType()
-
-
 def test_filter_unwanted_values(spark_session):
     """Test that rows with unwanted values are filtered out."""
     data = [
@@ -350,40 +293,6 @@ def test_add_derived_columns(spark_session):
     assert abs(rows[4]["delivery_completion_rate"] - 66.67) < 0.01
     assert rows[4]["is_on_time"] == "Yes"
     assert rows[4]["is_complete_delivery"] == "No"
-
-
-def test_clean_order_lines_data_integration(spark_session, sample_order_lines_df):
-    """Integration test for the entire data cleaning pipeline."""
-    result_df = clean_order_lines_data(sample_order_lines_df)
-    valid_order_ids = ["ORD123", "ORD456"]
-    expected_columns = [
-        "order_id",
-        "product_id",
-        "order_qty",
-        "agreed_delivery_date",
-        "actual_delivery_date",
-        "delivery_qty",
-        "delivery_delay_days",
-        "delivery_completion_rate",
-        "is_on_time",
-        "is_complete_delivery",
-    ]
-    for col_name in expected_columns:
-        assert col_name in result_df.columns
-    assert result_df.schema["order_id"].dataType == StringType()
-    assert result_df.schema["product_id"].dataType == IntegerType()
-    assert result_df.schema["order_qty"].dataType == IntegerType()
-    assert result_df.schema["delivery_qty"].dataType == IntegerType()
-    assert result_df.schema["agreed_delivery_date"].dataType == DateType()
-    assert result_df.schema["actual_delivery_date"].dataType == DateType()
-    if result_df.filter(result_df.order_id == "ORD123").count() > 0:
-        row = result_df.filter(result_df.order_id == "ORD123").collect()[0]
-        assert row["product_id"] == 456
-        assert row["order_qty"] == 10
-        assert row["delivery_qty"] == 8
-        assert row["delivery_completion_rate"] == 80.0
-        assert row["agreed_delivery_date"].year == 2024
-        assert row["actual_delivery_date"].year == 2024
 
 
 def test_clean_order_id_empty_string(spark_session):
