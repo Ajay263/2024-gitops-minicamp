@@ -21,7 +21,7 @@ default_args = {
     'start_date': datetime(2025, 1, 1),
     'email_on_failure': True,
     'email_on_retry': False,
-    'retries': 1,
+    'retries': 2,
     'retry_delay': timedelta(minutes=5),
     "on_failure_callback": slack_notify.send_failure_alert,
 }
