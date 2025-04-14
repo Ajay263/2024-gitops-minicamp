@@ -53,7 +53,7 @@ execution_config = ExecutionConfig(
 
 default_args = {
     "owner": "airflow",
-    "retries": 1,
+    "retries": 2,
     "retry_delay": pendulum.duration(minutes=5),
     "on_failure_callback": slack_notify.send_failure_alert,
     "params": {
