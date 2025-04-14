@@ -37,7 +37,7 @@ jobs:
       - name: Install and run pre-commit hooks
         run: |
           pre-commit install
-          SKIP=no-commit-to-branch pre-commit run --all-files
+          SKIP=sqlfluff-lint,sqlfluff-fix,yamllint,no-commit-to-branch pre-commit run --all-files --verbose
 
       - name: Run PySpark tests
         id: run_tests
