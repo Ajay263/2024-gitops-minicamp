@@ -21,14 +21,14 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install pytest pytest-cov allure-pytest pre-commit pytest-rerunfailures
+          pip install pytest pytest-cov allure-pytest pre-commit pytest-rerunfailures allure-commandline
       
       - name: Install and run pre-commit hooks
         run: |
           pre-commit install
           SKIP=sqlfluff-lint,sqlfluff-fix,yamllint,no-commit-to-branch pre-commit run --all-files --verbose
       
-      - name: Check environment
+      - name: Check Docker containers
         run: |
           sudo docker ps -a  # List all containers with sudo
       
@@ -64,11 +64,22 @@ jobs:
           path: allure-results
       
       - name: Generate Allure Report
-        uses: simple-elf/allure-report-action@master
         if: always()
-        with:
-          allure_results: allure-results
-          allure_history: allure-history
+        run: |
+          # Install Allure if not already installed
+          if ! command -v allure &> /dev/null; then
+            echo "Installing Allure command-line tool"
+            # Already installed via pip above
+          fi
+          
+          # Generate report from results
+          allure generate allure-results -o allure-report --clean
+          
+          # Copy history if it exists
+          if [ -d "gh-pages/history" ]; then
+            mkdir -p allure-report/history
+            cp -R gh-pages/history/* allure-report/history/ || true
+          fi
       
       - name: Upload Allure Report
         uses: actions/upload-artifact@v4
@@ -82,7 +93,7 @@ jobs:
         uses: peaceiris/actions-gh-pages@v3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: allure-history
+          publish_dir: allure-report
           keep_files: false
       
       - name: Add Coverage Comment to PR
