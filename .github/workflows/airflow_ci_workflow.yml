@@ -54,18 +54,22 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
       
+      - name: Test Docker image
+        run: |
+          docker run --rm airflow-test:latest bash -c "echo 'Testing Docker image'"
+      
+      - name: Install Test Dependencies in Docker
+        run: |
+          docker run --rm -v ${{ github.workspace }}:/app -w /app airflow-test:latest bash -c "python -m pip install pytest pytest-cov allure-pytest pytest-rerunfailures pre-commit"
+      
       - name: Run Pre-commit in Docker
         continue-on-error: true
         run: |
           if [ -f ".pre-commit-config.yaml" ]; then
-            docker run --rm -v ${{ github.workspace }}:/app -w /app airflow-test:latest bash -c "pip install pre-commit && pre-commit install && SKIP=sqlfluff-lint,sqlfluff-fix,yamllint,no-commit-to-branch pre-commit run --all-files --verbose"
+            docker run --rm -v ${{ github.workspace }}:/app -w /app airflow-test:latest bash -c "cd /app && git init && git add . && pre-commit install && SKIP=sqlfluff-lint,sqlfluff-fix,yamllint,no-commit-to-branch pre-commit run --all-files --verbose"
           else
             echo "No pre-commit config found, skipping"
           fi
-      
-      - name: Install Test Dependencies in Docker
-        run: |
-          docker run --rm -v ${{ github.workspace }}:/app -w /app airflow-test:latest pip install pytest pytest-cov allure-pytest pytest-rerunfailures
       
       - name: Run Airflow Tests in Docker
         id: run_tests
@@ -76,7 +80,7 @@ jobs:
             -w /app \
             -e PYTHONPATH=/app/airflow/dag \
             airflow-test:latest \
-            bash -c "cd airflow/test && pytest -xvs --continue-on-collection-errors --reruns 3 --cov=../dag --cov-report=xml:coverage.xml --cov-report=html:coverage_html --alluredir=allure-results"
+            bash -c "cd /app/airflow/test && python -m pytest -xvs --continue-on-collection-errors --reruns 3 --cov=../dag --cov-report=xml:coverage.xml --cov-report=html:coverage_html --alluredir=allure-results"
       
       - name: Get Allure history
         uses: actions/checkout@v4
@@ -121,15 +125,6 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: allure-history
           keep_files: false
-      
-      - name: Add Coverage Comment to PR
-        if: github.event_name == 'pull_request' && always()
-        uses: MishaKav/pytest-coverage-comment@main
-        with:
-          pytest-xml-coverage-path: airflow/test/coverage.xml
-          title: Airflow Test Coverage Report
-          create-new-comment: true
-          report-only-changed-files: true
       
       - name: Check test exit code
         if: always()
