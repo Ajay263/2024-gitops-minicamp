@@ -62,7 +62,7 @@ def save_docs_locally(project_dir: str, output_dir: str, **kwargs):
         else:
             print(f"Warning: {src} not found, skipping.")
     
-    # Copy assets directory if it exists
+    # Copy assets directory if it exist
     assets_src = os.path.join(project_dir, "target/assets")  # Changed from "assets" to "target/assets"
     assets_dst = os.path.join(output_dir, "assets")
     
