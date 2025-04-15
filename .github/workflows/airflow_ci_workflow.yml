@@ -7,7 +7,7 @@ on:
 
 jobs:
   test-and-comment:
-    runs-on: ubuntu-latest  # This example uses a hosted runner; update if you need a self-hosted one
+    runs-on: self-hosted  # This example uses a hosted runner; update if you need a self-hosted one
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
