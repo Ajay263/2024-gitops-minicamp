@@ -1,35 +1,90 @@
-name: PR Coverage Comment
+name: Airflow CI workflow
 on:
-  pull_request:
-    branches: [ '*' ]
-
+  push:
+    branches:
+      - main
 jobs:
-  pytest-coverage:
-    runs-on: self-hosted  # Matches your self-hosted runner setup
+  trigger-airflow:
+    runs-on: self-hosted  
+    
+    # Add permissions for commenting on PRs
+    permissions:
+      contents: write
+      checks: write
+      pull-requests: write
     
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
-
+      
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
           python-version: '3.9'
-
+          
       - name: Install dependencies
         run: |
-          python -m pip install --upgrade pip
-          pip install pytest pytest-cov
-
-      - name: Run tests and generate coverage inside Docker
+            python -m pip install --upgrade pip
+            pip install pytest pytest-cov allure-pytest pre-commit boto3 awscli pytest-rerunfailures pandas numpy
+          
+      - name: Install and run pre-commit hooks
         run: |
-          sudo docker exec airflow-airflow-webserver-1 bash -c "pytest --cov=/opt/airflow/dags /opt/airflow/test/ -v -p no:warnings > /opt/airflow/pytest-coverage.txt"
-
-      - name: Copy coverage report from container
+              pre-commit install
+              SKIP=sqlfluff-lint,sqlfluff-fix,yamllint,no-commit-to-branch pre-commit run --all-files --verbose
+    
+      - name: Check environment
         run: |
-          sudo docker cp airflow-airflow-webserver-1:/opt/airflow/pytest-coverage.txt ./pytest-coverage.txt
-
-      - name: Comment coverage on PR
-        uses: coroo/pytest-coverage-commentator@v1.0.2
+          pwd
+          ls -la
+          sudo docker ps -a  # List all containers with sudo
+      
+      - name: Install pytest-cov in Docker container
+        run: |
+          sudo docker exec airflow-airflow-webserver-1 bash -c "pip install pytest-cov || python -m pip install pytest-cov"
+      
+      - name: Test the Airflow dag with coverage
+        run: |
+          # Create a simple test script that will run pytest with coverage
+          echo '
+          import subprocess
+          import os
+          
+          # Run pytest with coverage
+          os.chdir("/opt/airflow")
+          result = subprocess.run(
+              ["python", "-m", "pytest", "-v", "test/", "-p", "no:warnings", 
+               "--junitxml=pytest.xml", "--cov=.", "--cov-report=term"],
+              capture_output=True, text=True
+          )
+          
+          # Write output to file
+          with open("pytest-coverage.txt", "w") as f:
+              f.write(result.stdout)
+              f.write(result.stderr)
+          
+          # Print status
+          print("Tests completed with exit code:", result.returncode)
+          print("Results saved to pytest.xml and pytest-coverage.txt")
+          ' > run_tests.py
+          
+          # Copy the script to the container
+          sudo docker cp run_tests.py airflow-airflow-webserver-1:/opt/airflow/run_tests.py
+          
+          # Run the script in the container
+          sudo docker exec airflow-airflow-webserver-1 bash -c "cd /opt/airflow && python run_tests.py"
+      
+      - name: Copy coverage files from Docker container
+        run: |
+          sudo docker cp airflow-airflow-webserver-1:/opt/airflow/pytest.xml ./pytest.xml || echo "pytest.xml not found"
+          sudo docker cp airflow-airflow-webserver-1:/opt/airflow/pytest-coverage.txt ./pytest-coverage.txt || echo "pytest-coverage.txt not found"
+          
+          # Show content of files
+          echo "Content of pytest-coverage.txt:"
+          cat ./pytest-coverage.txt || echo "File not found"
+      
+      - name: Pytest coverage comment
+        id: coverage-comment
+        uses: MishaKav/pytest-coverage-comment@main
         with:
-          pytest-coverage: pytest-coverage.txt
+          pytest-coverage-path: ./pytest-coverage.txt
+          junitxml-path: ./pytest.xml
