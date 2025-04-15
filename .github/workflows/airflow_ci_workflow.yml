@@ -1,46 +1,63 @@
 name: Trigger Airflow DAG
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
 on:
   push:
     branches:
       - main
   workflow_dispatch:
 
+env:
+  TEST_EXECUTION_ENV: prod
+
 jobs:
-  trigger-airflow:
-    runs-on: self-hosted  # Use self-hosted runner on your EC2 instance
-    
+  test:
+    name: 'Run Airflow Tests'
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-      
+
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.9'
-      
+
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install pytest pytest-cov allure-pytest pre-commit pytest-rerunfailures allure-commandline
-      
+          # Install testing dependencies
+          pip install pytest pytest-cov allure-pytest pre-commit pytest-rerunfailures
+          # Install Airflow and required providers
+          pip install apache-airflow
+          pip install apache-airflow[amazon]
+          pip install apache-airflow-providers-slack
+          pip install apache-airflow[statsd]
+          pip install apache-airflow-providers-openlineage
+          # Install additional dependencies
+          pip install astronomer-cosmos
+          pip install boto3
+          pip install pandas
+          pip install pydantic==2.8.2
+
       - name: Install and run pre-commit hooks
         run: |
           pre-commit install
           SKIP=sqlfluff-lint,sqlfluff-fix,yamllint,no-commit-to-branch pre-commit run --all-files --verbose
-      
-      - name: Check Docker containers
-        run: |
-          sudo docker ps -a  # List all containers with sudo
-      
-      - name: Test the Airflow dag
+
+      - name: Run Airflow tests
         id: run_tests
         continue-on-error: true
         run: |
-          sudo docker exec airflow-airflow-webserver-1 bash -c "cd /opt/airflow && python -m pytest test/ -v -p no:warnings --cov=dags --cov-report=xml:test/coverage.xml --cov-report=html:test/coverage_html --alluredir=test/allure-results"
-          sudo docker cp airflow-airflow-webserver-1:/opt/airflow/test/coverage.xml ./coverage.xml
-          sudo docker cp airflow-airflow-webserver-1:/opt/airflow/test/coverage_html ./coverage_html
-          sudo docker cp airflow-airflow-webserver-1:/opt/airflow/test/allure-results ./allure-results
-      
+          export PYTHONPATH=$PYTHONPATH:$GITHUB_WORKSPACE
+          cd airflow
+          export AIRFLOW_HOME=$(pwd)
+          pytest test/ -v -p no:warnings --cov=dags --cov-report=xml:coverage.xml --cov-report=html:coverage_html --alluredir=allure-results
+
       - name: Get Allure history
         uses: actions/checkout@v4
         if: always()
@@ -48,63 +65,61 @@ jobs:
         with:
           ref: gh-pages
           path: gh-pages
-      
+
       - name: Upload Coverage Report (HTML)
         uses: actions/upload-artifact@v4
         if: always()
         with:
           name: coverage_html
-          path: coverage_html
-      
+          path: airflow/coverage_html
+
       - name: Upload Allure Results
         uses: actions/upload-artifact@v4
         if: always()
         with:
           name: allure-results
-          path: allure-results
-      
+          path: airflow/allure-results
+
       - name: Generate Allure Report
+        uses: simple-elf/allure-report-action@master
         if: always()
-        run: |
-          # Install Allure if not already installed
-          if ! command -v allure &> /dev/null; then
-            echo "Installing Allure command-line tool"
-            # Already installed via pip above
-          fi
-          
-          # Generate report from results
-          allure generate allure-results -o allure-report --clean
-          
-          # Copy history if it exists
-          if [ -d "gh-pages/history" ]; then
-            mkdir -p allure-report/history
-            cp -R gh-pages/history/* allure-report/history/ || true
-          fi
-      
+        with:
+          allure_results: airflow/allure-results
+          allure_history: allure-history
+
       - name: Upload Allure Report
         uses: actions/upload-artifact@v4
         if: always()
         with:
           name: allure-report
           path: allure-report
-      
+
       - name: Deploy to GitHub Pages
         if: always()
         uses: peaceiris/actions-gh-pages@v3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: allure-report
+          publish_dir: allure-history
           keep_files: false
-      
+
+      - name: Set current date as env variable
+        if: always()
+        run: |
+          echo "event_name=$GITHUB_EVENT_NAME" >> $GITHUB_OUTPUT
+          echo "workflow=$GITHUB_WORKFLOW" >> $GITHUB_OUTPUT
+          echo "actor=$GITHUB_ACTOR" >> $GITHUB_OUTPUT
+          echo "run_number=$GITHUB_RUN_NUMBER" >> $GITHUB_OUTPUT
+        id: version
+
       - name: Add Coverage Comment to PR
         if: github.event_name == 'pull_request' && always()
         uses: MishaKav/pytest-coverage-comment@main
         with:
-          pytest-xml-coverage-path: coverage.xml
+          pytest-xml-coverage-path: airflow/coverage.xml
           title: Airflow DAG Test Coverage Report
           create-new-comment: true
           report-only-changed-files: true
-      
+
       - name: Check test status and set job output
         if: always()
         id: check_status
@@ -116,3 +131,48 @@ jobs:
           fi
     outputs:
       tests_failed: ${{ steps.check_status.outputs.tests_failed }}
+
+  deploy-dags:
+    name: 'Deploy Airflow DAGs'
+    runs-on: ubuntu-latest
+    environment: production
+    needs: test
+    defaults:
+      run:
+        shell: bash
+
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.ROLE_TO_ASSUME }}
+          aws-region: us-east-1
+
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.9'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install boto3
+
+      - name: Upload DAGs to S3
+        run: |
+          aws s3 cp --recursive airflow/dags/ s3://${CODE_BUCKET}/dags/
+        env:
+          CODE_BUCKET: ${{ secrets.AIRFLOW_DAGS_BUCKET }}
+
+      - name: Fail if tests failed
+        if: needs.test.outputs.tests_failed == 'true'
+        run: |
+          echo "Tests failed in the previous job. Marking workflow as failed."
+          exit 1
