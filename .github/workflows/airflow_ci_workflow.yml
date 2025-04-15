@@ -1,160 +1,322 @@
-name: Airflow CI Workflow
-
-permissions:
-  contents: write
-  pages: write
-  id-token: write
+name: Airflow CI Pipeline
 
 on:
   push:
+    branches-ignore:
+      - main
+    paths:
+      - 'airflow/dags/**'
+      - 'airflow/test/**'
+      - 'airflow/Dockerfile'
+      - 'airflow/requirements.txt'
+      - 'airflow/requirements_dbt_venv.txt'
+      - 'airflow/docker-compose.yml'
+      - '.github/workflows/airflow-ci.yml'
+  pull_request:
     branches:
       - main
     paths:
-      - 'airflow/dag/**'
+      - 'airflow/dags/**'
       - 'airflow/test/**'
       - 'airflow/Dockerfile'
-      - 'requirements.txt'
-  pull_request:
-    paths:
-      - 'airflow/dag/**'
-      - 'airflow/test/**'
-      - 'airflow/Dockerfile'
-      - 'requirements.txt'
+      - 'airflow/requirements.txt'
+      - 'airflow/requirements_dbt_venv.txt'
+      - 'airflow/docker-compose.yml'
+      - '.github/workflows/airflow-ci.yml'
   workflow_dispatch:
 
+permissions:
+  contents: write
+  pull-requests: write
+  id-token: write
+  pages: write
+
 env:
-  TEST_EXECUTION_ENV: prod
+  DOCKER_BUILDKIT: 1
+  COMPOSE_DOCKER_CLI_BUILD: 1
+  AIRFLOW_UID: 50000
+  AIRFLOW_IMAGE_NAME: airflow-ci-image
+  AIRFLOW_IMAGE_TAG: ${{ github.sha }}
+  CACHE_KEY_PREFIX: airflow-docker-cache
 
 jobs:
-  test:
-    name: 'Run Airflow Tests'
+  lint:
+    name: 'Code Quality Checks'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-      
-      - name: Set up Python 3.9
+
+      - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.9'
-      
-      - name: Install system dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y --no-install-recommends \
-            gcc \
-            g++ \
-            make \
-            git \
-            libpq-dev \
-            postgresql-client
-      
-      - name: Install Python dependencies
+          cache: 'pip'
+
+      - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install pytest pytest-cov allure-pytest pytest-rerunfailures pre-commit psycopg2
-          pip install apache-airflow pandas boto3
-          # Install additional packages from your Dockerfile
-          pip install apache-airflow[amazon] apache-airflow-providers-slack apache-airflow[statsd]
-          pip install apache-airflow-providers-openlineage astronomer-cosmos pydantic==2.8.2
-          if [ -f "requirements.txt" ]; then
-            pip install -r requirements.txt
-          fi
-      
-      - name: Install and run pre-commit hooks
+          pip install pre-commit black isort flake8 pylint
+
+      - name: Cache pre-commit
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pre-commit
+          key: ${{ runner.os }}-pre-commit-${{ hashFiles('.pre-commit-config.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pre-commit-
+
+      - name: Run pre-commit hooks
         if: hashFiles('.pre-commit-config.yaml') != ''
         run: |
           pre-commit install
-          SKIP=sqlfluff-lint,sqlfluff-fix,yamllint,no-commit-to-branch pre-commit run --all-files --verbose
-      
-      - name: Debug directory structure
+          SKIP=no-commit-to-branch pre-commit run --all-files --verbose
+
+      - name: Lint Python code
         run: |
-          ls -la
-          ls -la airflow/
-          ls -la airflow/dag/ || echo "dag directory not found"
-          ls -la airflow/dags/ || echo "dags directory not found"
-          echo "Python path: $PYTHONPATH"
-          pip list | grep cosmos || echo "Cosmos not found in pip list"
-      
-      - name: Run Airflow tests
-        id: run_tests
-        continue-on-error: true
-        run: |
-          export AIRFLOW_HOME=$GITHUB_WORKSPACE/airflow
-          export PYTHONPATH=$PYTHONPATH:$GITHUB_WORKSPACE:$GITHUB_WORKSPACE/airflow/dag:$GITHUB_WORKSPACE/airflow/dags
-          mkdir -p $AIRFLOW_HOME/dags
-          # Copy DAG files to Airflow expected location
-          cp -r airflow/dag/* $AIRFLOW_HOME/dags/ 2>/dev/null || echo "No DAGs to copy"
-          cd airflow/test
-          python -c "import sys; print(sys.path)" # Debug Python path
-          python -c "import pkg_resources; print([p.project_name for p in pkg_resources.working_set])" # List installed packages
-          pytest -xvs --continue-on-collection-errors --reruns 3 --cov=../dag --cov-report=xml:coverage.xml --cov-report=html:coverage_html --alluredir=allure-results
-      
-      - name: Get Allure history
+          black --check airflow/
+          isort --check airflow/
+          flake8 airflow/
+
+  build-airflow:
+    name: 'Build Airflow Docker Image'
+    needs: lint
+    runs-on: ubuntu-latest
+    outputs:
+      image-tag: ${{ env.AIRFLOW_IMAGE_TAG }}
+    steps:
+      - name: Checkout repository
         uses: actions/checkout@v4
-        if: always()
-        continue-on-error: true
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Cache Docker layers
+        uses: actions/cache@v4
         with:
-          ref: gh-pages
-          path: gh-pages
-      
-      - name: Upload Coverage Report (HTML)
-        uses: actions/upload-artifact@v4
-        if: always()
+          path: /tmp/.buildx-cache
+          key: ${{ env.CACHE_KEY_PREFIX }}-${{ github.sha }}
+          restore-keys: |
+            ${{ env.CACHE_KEY_PREFIX }}-
+
+      - name: Build Airflow Docker image
+        uses: docker/build-push-action@v5
         with:
-          name: coverage_html
-          path: airflow/test/coverage_html
-      
-      - name: Upload Allure Results
-        uses: actions/upload-artifact@v4
-        if: always()
+          context: .
+          file: ./airflow/Dockerfile
+          push: false
+          load: true
+          tags: ${{ env.AIRFLOW_IMAGE_NAME }}:${{ env.AIRFLOW_IMAGE_TAG }}
+          cache-from: type=local,src=/tmp/.buildx-cache
+          cache-to: type=local,dest=/tmp/.buildx-cache-new
+          build-args: |
+            BUILDKIT_INLINE_CACHE=1
+
+      - name: Move cache
+        # Temp fix for https://github.com/docker/build-push-action/issues/252
+        run: |
+          rm -rf /tmp/.buildx-cache
+          mv /tmp/.buildx-cache-new /tmp/.buildx-cache
+
+  validate-dags:
+    name: 'Validate Airflow DAGs'
+    needs: build-airflow
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
         with:
-          name: allure-results
-          path: airflow/test/allure-results
-      
+          python-version: '3.9'
+          cache: 'pip'
+
+      - name: Install Airflow
+        run: |
+          python -m pip install --upgrade pip
+          pip install apache-airflow==$(grep "FROM apache/airflow:" airflow/Dockerfile | grep -oP "[\d\.]+(?=-python)")
+          pip install -r requirements.txt
+
+      - name: Validate DAGs
+        run: |
+          mkdir -p ./airflow/logs
+          export AIRFLOW_HOME=$(pwd)/airflow
+          for dagfile in $(find ./airflow/dags -name "*.py"); do
+            echo "Validating $dagfile"
+            python $dagfile || exit 1
+          done
+          
+          # Also run airflow dag list to validate syntax
+          airflow db init
+          airflow dags list || exit 1
+
+  test-airflow:
+    name: 'Run Airflow Tests'
+    needs: [build-airflow, validate-dags]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Create directories and config files
+        run: |
+          mkdir -p ./logs ./plugins ./dbt/nexabrands_dbt ./dbt/dbt-docs ./include
+          mkdir -p ./config_files/statsd ./config_files/prometheus ./config_files/grafana/etc/grafana/provisioning/{dashboards,datasources} ./config_files/grafana/var/lib/grafana/{dashboards,plugins} ./config_files/alertmanager
+          
+          # Create minimal config files for services to start
+          echo "mappings: []" > ./config_files/statsd/statsd.yaml
+          echo "global: {scrape_interval: 15s}" > ./config_files/prometheus/prometheus.yaml
+          echo "route: {receiver: 'null'}" > ./config_files/alertmanager/config.yaml
+          touch ./config/airflow.cfg
+
+      - name: Create .env file for Docker Compose
+        run: |
+          echo "AIRFLOW_UID=${AIRFLOW_UID}" > .env
+          echo "AIRFLOW_IMAGE_NAME=${AIRFLOW_IMAGE_NAME}" >> .env
+          echo "AIRFLOW_IMAGE_TAG=${AIRFLOW_IMAGE_TAG}" >> .env
+          echo "_AIRFLOW_WWW_USER_USERNAME=airflow" >> .env
+          echo "_AIRFLOW_WWW_USER_PASSWORD=airflow" >> .env
+          echo "POSTGRES_USER=metabase" >> .env
+          echo "POSTGRES_PASSWORD=metabase" >> .env
+          echo "POSTGRES_DB=metabase" >> .env
+
+      - name: Update docker-compose.yml to use built image
+        run: |
+          # Use sed to replace the image line in docker-compose.yml
+          sed -i "s|image: airflow-image:latest|image: ${AIRFLOW_IMAGE_NAME}:${AIRFLOW_IMAGE_TAG}|g" docker-compose.yml
+          cat docker-compose.yml
+
+      - name: Start core services
+        run: |
+          docker-compose up -d postgres redis
+          
+          # Wait for postgres to be ready
+          echo "Waiting for postgres to be ready..."
+          until docker-compose exec -T postgres pg_isready -U airflow; do
+            echo "Postgres is unavailable - sleeping 2s"
+            sleep 2
+          done
+
+      - name: Run airflow-init
+        run: |
+          docker-compose up airflow-init
+          
+          # Check if initialization was successful
+          if [ $(docker-compose ps -q airflow-init | xargs docker inspect -f '{{ .State.ExitCode }}') -ne 0 ]; then
+            echo "Airflow initialization failed!"
+            docker-compose logs airflow-init
+            exit 1
+          fi
+
+      - name: Start airflow webserver
+        run: |
+          docker-compose up -d airflow-webserver
+          
+          # Wait for webserver to be ready
+          echo "Waiting for airflow webserver to be ready..."
+          for i in {1..30}; do
+            if docker-compose exec -T airflow-webserver curl -s http://localhost:8080/health > /dev/null; then
+              echo "Airflow webserver is ready!"
+              break
+            fi
+            echo "Waiting... ($i/30)"
+            sleep 10
+            if [ $i -eq 30 ]; then
+              echo "Timed out waiting for airflow webserver"
+              docker-compose logs airflow-webserver
+              exit 1
+            fi
+          done
+
+      - name: Prepare test environment in container
+        run: |
+          # Copy test directory
+          docker-compose exec -T airflow-webserver mkdir -p /opt/airflow/test
+          docker cp ./airflow/test/. $(docker-compose ps -q airflow-webserver):/opt/airflow/test/
+          
+          # Install test dependencies
+          docker-compose exec -T airflow-webserver pip install pytest pytest-cov allure-pytest pytest-rerunfailures
+
+      - name: Run pytest in container
+        id: run_tests
+        run: |
+          # Create directory for test results
+          docker-compose exec -T airflow-webserver mkdir -p /opt/airflow/test_results/{coverage_html,allure-results}
+          
+          # Run tests
+          docker-compose exec -T airflow-webserver bash -c "cd /opt/airflow && \
+            PYTHONPATH=/opt/airflow pytest -xvs /opt/airflow/test/ \
+            -p no:warnings \
+            --cov=dags \
+            --cov-report=xml:/opt/airflow/test_results/coverage.xml \
+            --cov-report=html:/opt/airflow/test_results/coverage_html \
+            --alluredir=/opt/airflow/test_results/allure-results"
+
+      - name: Copy test results from container
+        if: always()
+        run: |
+          # Create local directory for test results
+          mkdir -p test_results/{coverage_html,allure-results}
+          
+          # Copy test results from container
+          docker cp $(docker-compose ps -q airflow-webserver):/opt/airflow/test_results/coverage.xml ./test_results/ || echo "No coverage.xml found"
+          docker cp $(docker-compose ps -q airflow-webserver):/opt/airflow/test_results/coverage_html/. ./test_results/coverage_html/ || echo "No coverage HTML found"
+          docker cp $(docker-compose ps -q airflow-webserver):/opt/airflow/test_results/allure-results/. ./test_results/allure-results/ || echo "No Allure results found"
+
       - name: Generate Allure Report
         uses: simple-elf/allure-report-action@master
         if: always()
         with:
-          allure_results: airflow/test/allure-results
+          allure_results: test_results/allure-results
           allure_history: allure-history
-      
-      - name: Upload Allure Report
+          keep_history: 20
+
+      - name: Upload Test Results Artifacts
         uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: allure-report
-          path: allure-report
-      
-      - name: Deploy to GitHub Pages
+          name: test-results
+          path: |
+            test_results/coverage.xml
+            test_results/coverage_html
+            test_results/allure-results
+
+      - name: Add Coverage PR Comment
+        if: github.event_name == 'pull_request' && always()
+        uses: MishaKav/pytest-coverage-comment@main
+        with:
+          pytest-xml-coverage-path: ./test_results/coverage.xml
+          title: Airflow Test Coverage Report
+          create-new-comment: true
+          report-only-changed-files: true
+
+      - name: Deploy Allure Report to GitHub Pages
         if: always() && github.event_name != 'pull_request'
         uses: peaceiris/actions-gh-pages@v3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: allure-history
-          keep_files: false
-      
-      - name: Add Coverage Comment to PR
-        if: github.event_name == 'pull_request' && always()
-        uses: MishaKav/pytest-coverage-comment@main
-        with:
-          pytest-xml-coverage-path: airflow/test/coverage.xml
-          title: Airflow Test Coverage Report
-          create-new-comment: true
-          report-only-changed-files: true
-      
-      - name: Check test status and set job output
+          keep_files: true
+
+      - name: Cleanup
         if: always()
-        id: check_status
         run: |
-          if [ "${{ steps.run_tests.outcome }}" == "failure" ]; then
-            echo "tests_failed=true" >> $GITHUB_OUTPUT
-          else
-            echo "tests_failed=false" >> $GITHUB_OUTPUT
-          fi
-      
-      - name: Fail if tests failed
-        if: steps.check_status.outputs.tests_failed == 'true'
-        run: |
-          echo "Tests failed. Marking workflow as failed."
-          exit 1
+          docker-compose down -v
+
+  auto-merge:
+    name: 'Auto-merge if tests pass'
+    if: github.event_name == 'pull_request' && success()
+    needs: test-airflow
+    runs-on: ubuntu-latest
+    steps:
+      - name: Auto-merge PR
+        uses: pascalgn/automerge-action@v0.15.6
+        env:
+          GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
+          MERGE_LABELS: "automerge,!wip,!work in progress"
+          MERGE_METHOD: "squash"
+          MERGE_COMMIT_MESSAGE: "pull-request-title"
+          MERGE_FORKS: "false"
+          MERGE_RETRIES: "6"
+          MERGE_RETRY_SLEEP: "10000"
