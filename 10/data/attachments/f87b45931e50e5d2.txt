@@ -1,0 +1,84 @@
+INFO     airflow.models.dagbag.DagBag:dagbag.py:588 Filling up the DagBag from /home/runner/work/2024-gitops-minicamp/2024-gitops-minicamp/airflow/dags
+ERROR    airflow.models.dagbag.DagBag:dagbag.py:387 Failed to import: /home/runner/work/2024-gitops-minicamp/2024-gitops-minicamp/airflow/dags/dbt_simple_task_group.py
+Traceback (most recent call last):
+  File "/opt/hostedtoolcache/Python/3.9.21/x64/lib/python3.9/site-packages/airflow/models/dagbag.py", line 383, in parse
+    loader.exec_module(new_module)
+  File "<frozen importlib._bootstrap_external>", line 850, in exec_module
+  File "<frozen importlib._bootstrap>", line 228, in _call_with_frames_removed
+  File "/home/runner/work/2024-gitops-minicamp/2024-gitops-minicamp/airflow/dags/dbt_simple_task_group.py", line 9, in <module>
+    from cosmos import (
+ModuleNotFoundError: No module named 'cosmos'
+ERROR    airflow.models.dagbag.DagBag:dagbag.py:387 Failed to import: /home/runner/work/2024-gitops-minicamp/2024-gitops-minicamp/airflow/dags/etl_dag.py
+Traceback (most recent call last):
+  File "/opt/hostedtoolcache/Python/3.9.21/x64/lib/python3.9/site-packages/airflow/models/dagbag.py", line 383, in parse
+    loader.exec_module(new_module)
+  File "<frozen importlib._bootstrap_external>", line 850, in exec_module
+  File "<frozen importlib._bootstrap>", line 228, in _call_with_frames_removed
+  File "/home/runner/work/2024-gitops-minicamp/2024-gitops-minicamp/airflow/dags/etl_dag.py", line 10, in <module>
+    from airflow.providers.amazon.aws.operators.glue import GlueJobOperator
+ModuleNotFoundError: No module named 'airflow.providers.amazon'
+ERROR    airflow.models.dagbag.DagBag:dagbag.py:387 Failed to import: /home/runner/work/2024-gitops-minicamp/2024-gitops-minicamp/airflow/dags/dbt_docs_generator.py
+Traceback (most recent call last):
+  File "/opt/hostedtoolcache/Python/3.9.21/x64/lib/python3.9/site-packages/airflow/models/dagbag.py", line 383, in parse
+    loader.exec_module(new_module)
+  File "<frozen importlib._bootstrap_external>", line 850, in exec_module
+  File "<frozen importlib._bootstrap>", line 228, in _call_with_frames_removed
+  File "/home/runner/work/2024-gitops-minicamp/2024-gitops-minicamp/airflow/dags/dbt_docs_generator.py", line 17, in <module>
+    from cosmos import ProfileConfig
+ModuleNotFoundError: No module named 'cosmos'
+INFO     airflow.models.dagbag.DagBag:dagbag.py:588 Filling up the DagBag from /home/runner/work/2024-gitops-minicamp/2024-gitops-minicamp/airflow/dags
+ERROR    airflow.models.dagbag.DagBag:dagbag.py:387 Failed to import: /home/runner/work/2024-gitops-minicamp/2024-gitops-minicamp/airflow/dags/dbt_simple_task_group.py
+Traceback (most recent call last):
+  File "/opt/hostedtoolcache/Python/3.9.21/x64/lib/python3.9/site-packages/airflow/models/dagbag.py", line 383, in parse
+    loader.exec_module(new_module)
+  File "<frozen importlib._bootstrap_external>", line 850, in exec_module
+  File "<frozen importlib._bootstrap>", line 228, in _call_with_frames_removed
+  File "/home/runner/work/2024-gitops-minicamp/2024-gitops-minicamp/airflow/dags/dbt_simple_task_group.py", line 9, in <module>
+    from cosmos import (
+ModuleNotFoundError: No module named 'cosmos'
+ERROR    airflow.models.dagbag.DagBag:dagbag.py:387 Failed to import: /home/runner/work/2024-gitops-minicamp/2024-gitops-minicamp/airflow/dags/etl_dag.py
+Traceback (most recent call last):
+  File "/opt/hostedtoolcache/Python/3.9.21/x64/lib/python3.9/site-packages/airflow/models/dagbag.py", line 383, in parse
+    loader.exec_module(new_module)
+  File "<frozen importlib._bootstrap_external>", line 850, in exec_module
+  File "<frozen importlib._bootstrap>", line 228, in _call_with_frames_removed
+  File "/home/runner/work/2024-gitops-minicamp/2024-gitops-minicamp/airflow/dags/etl_dag.py", line 10, in <module>
+    from airflow.providers.amazon.aws.operators.glue import GlueJobOperator
+ModuleNotFoundError: No module named 'airflow.providers.amazon'
+ERROR    airflow.models.dagbag.DagBag:dagbag.py:387 Failed to import: /home/runner/work/2024-gitops-minicamp/2024-gitops-minicamp/airflow/dags/dbt_docs_generator.py
+Traceback (most recent call last):
+  File "/opt/hostedtoolcache/Python/3.9.21/x64/lib/python3.9/site-packages/airflow/models/dagbag.py", line 383, in parse
+    loader.exec_module(new_module)
+  File "<frozen importlib._bootstrap_external>", line 850, in exec_module
+  File "<frozen importlib._bootstrap>", line 228, in _call_with_frames_removed
+  File "/home/runner/work/2024-gitops-minicamp/2024-gitops-minicamp/airflow/dags/dbt_docs_generator.py", line 17, in <module>
+    from cosmos import ProfileConfig
+ModuleNotFoundError: No module named 'cosmos'
+INFO     airflow.models.dagbag.DagBag:dagbag.py:588 Filling up the DagBag from /home/runner/work/2024-gitops-minicamp/2024-gitops-minicamp/airflow/dags
+ERROR    airflow.models.dagbag.DagBag:dagbag.py:387 Failed to import: /home/runner/work/2024-gitops-minicamp/2024-gitops-minicamp/airflow/dags/dbt_simple_task_group.py
+Traceback (most recent call last):
+  File "/opt/hostedtoolcache/Python/3.9.21/x64/lib/python3.9/site-packages/airflow/models/dagbag.py", line 383, in parse
+    loader.exec_module(new_module)
+  File "<frozen importlib._bootstrap_external>", line 850, in exec_module
+  File "<frozen importlib._bootstrap>", line 228, in _call_with_frames_removed
+  File "/home/runner/work/2024-gitops-minicamp/2024-gitops-minicamp/airflow/dags/dbt_simple_task_group.py", line 9, in <module>
+    from cosmos import (
+ModuleNotFoundError: No module named 'cosmos'
+ERROR    airflow.models.dagbag.DagBag:dagbag.py:387 Failed to import: /home/runner/work/2024-gitops-minicamp/2024-gitops-minicamp/airflow/dags/etl_dag.py
+Traceback (most recent call last):
+  File "/opt/hostedtoolcache/Python/3.9.21/x64/lib/python3.9/site-packages/airflow/models/dagbag.py", line 383, in parse
+    loader.exec_module(new_module)
+  File "<frozen importlib._bootstrap_external>", line 850, in exec_module
+  File "<frozen importlib._bootstrap>", line 228, in _call_with_frames_removed
+  File "/home/runner/work/2024-gitops-minicamp/2024-gitops-minicamp/airflow/dags/etl_dag.py", line 10, in <module>
+    from airflow.providers.amazon.aws.operators.glue import GlueJobOperator
+ModuleNotFoundError: No module named 'airflow.providers.amazon'
+ERROR    airflow.models.dagbag.DagBag:dagbag.py:387 Failed to import: /home/runner/work/2024-gitops-minicamp/2024-gitops-minicamp/airflow/dags/dbt_docs_generator.py
+Traceback (most recent call last):
+  File "/opt/hostedtoolcache/Python/3.9.21/x64/lib/python3.9/site-packages/airflow/models/dagbag.py", line 383, in parse
+    loader.exec_module(new_module)
+  File "<frozen importlib._bootstrap_external>", line 850, in exec_module
+  File "<frozen importlib._bootstrap>", line 228, in _call_with_frames_removed
+  File "/home/runner/work/2024-gitops-minicamp/2024-gitops-minicamp/airflow/dags/dbt_docs_generator.py", line 17, in <module>
+    from cosmos import ProfileConfig
+ModuleNotFoundError: No module named 'cosmos'
