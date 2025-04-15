@@ -26,13 +26,11 @@ jobs:
         run: |
             python -m pip install --upgrade pip
             pip install pytest pytest-cov allure-pytest pre-commit boto3 awscli pytest-rerunfailures pandas numpy
-  
           
       - name: Install and run pre-commit hooks
         run: |
               pre-commit install
               SKIP=sqlfluff-lint,sqlfluff-fix,yamllint,no-commit-to-branch pre-commit run --all-files --verbose
-    
       
       - name: Check environment
         run: |
@@ -40,19 +38,37 @@ jobs:
           ls -la
           sudo docker ps -a  # List all containers with sudo
       
-      - name: Test the Airflow dag with coverage
+      - name: Install pytest-cov in Docker container
         run: |
-          sudo docker exec airflow-airflow-webserver-1 bash -c "cd /opt/airflow && python -m pytest -v test/ -p no:warnings --junitxml=/opt/airflow/pytest.xml --cov-report=term-missing:skip-covered --cov-report=xml:/opt/airflow/coverage.xml --cov=/opt/airflow/ | tee /opt/airflow/pytest-coverage.txt"
+          sudo docker exec airflow-airflow-webserver-1 pip install pytest-cov
+      
+      - name: Run tests in Docker container
+        run: |
+          # First create a directory to store the results
+          sudo docker exec airflow-airflow-webserver-1 mkdir -p /opt/airflow/test_results
           
+          # Then run the tests with coverage
+          sudo docker exec airflow-airflow-webserver-1 bash -c "cd /opt/airflow && python -m pytest -v test/ -p no:warnings --junitxml=/opt/airflow/test_results/pytest.xml --cov-report=term-missing:skip-covered --cov-report=xml --cov=/opt/airflow > /opt/airflow/test_results/pytest-coverage.txt"
+          
+          # Copy the generated coverage.xml
+          sudo docker exec airflow-airflow-webserver-1 bash -c "cp coverage.xml /opt/airflow/test_results/ || echo 'coverage.xml not found'"
+      
       - name: Copy coverage files from Docker container
         run: |
-          sudo docker cp airflow-airflow-webserver-1:/opt/airflow/pytest.xml ./pytest.xml
-          sudo docker cp airflow-airflow-webserver-1:/opt/airflow/coverage.xml ./coverage.xml
-          sudo docker cp airflow-airflow-webserver-1:/opt/airflow/pytest-coverage.txt ./pytest-coverage.txt
+          # Create local directory for test results
+          mkdir -p ./test_results
+          
+          # Copy files from container
+          sudo docker cp airflow-airflow-webserver-1:/opt/airflow/test_results/pytest.xml ./test_results/pytest.xml || echo "pytest.xml not found"
+          sudo docker cp airflow-airflow-webserver-1:/opt/airflow/test_results/coverage.xml ./test_results/coverage.xml || echo "coverage.xml not found"
+          sudo docker cp airflow-airflow-webserver-1:/opt/airflow/test_results/pytest-coverage.txt ./test_results/pytest-coverage.txt || echo "pytest-coverage.txt not found"
+          
+          # List files to confirm they exist
+          ls -la ./test_results/
       
       - name: Pytest coverage comment
         uses: MishaKav/pytest-coverage-comment@main
         with:
-          pytest-coverage-path: ./pytest-coverage.txt
-          pytest-xml-coverage-path: ./coverage.xml
-          junitxml-path: ./pytest.xml
+          pytest-coverage-path: ./test_results/pytest-coverage.txt
+          pytest-xml-coverage-path: ./test_results/coverage.xml
+          junitxml-path: ./test_results/pytest.xml
