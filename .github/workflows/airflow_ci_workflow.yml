@@ -3,7 +3,7 @@ name: AIRFLOW TEST
 on:
   pull_request:
     branches:
-      - '*'   # Triggers on PRs to any branch
+      - '*'   # Triggers on PRs to 
 
 jobs:
   test-and-comment:
