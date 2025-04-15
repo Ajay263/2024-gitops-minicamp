@@ -1,4 +1,4 @@
-name: Airflow DAG
+name: Trigger Airflow DAG
 on:
   push:
     branches:
