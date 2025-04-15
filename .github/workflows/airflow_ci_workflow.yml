@@ -1,134 +1,39 @@
-name: Trigger Airflow DAG
+name: AIRFLOW TEST
+
 on:
-  push:
+  pull_request:
     branches:
-      - main
+      - '*'   # Triggers on PRs to any branch
+
 jobs:
-  trigger-airflow:
-    runs-on: self-hosted  
-    
-    # Add permissions for commenting on PRs
-    permissions:
-      contents: write
-      checks: write
-      pull-requests: write
-    
+  test-and-comment:
+    runs-on: ubuntu-latest  # This example uses a hosted runner; update if you need a self-hosted one
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
-      
+
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
           python-version: '3.9'
-          
+
       - name: Install dependencies
         run: |
-            python -m pip install --upgrade pip
-            pip install pytest pytest-cov allure-pytest pre-commit boto3 awscli pytest-rerunfailures pandas numpy
+          python -m pip install --upgrade pip
+          pip install pytest pytest-cov boto3 awscli pandas numpy
           
-      - name: Install and run pre-commit hooks
+      - name: Pre-commit hooks
         run: |
-              pre-commit install
-              SKIP=sqlfluff-lint,sqlfluff-fix,yamllint,no-commit-to-branch pre-commit run --all-files --verbose
-    
-      - name: Check environment
+          pre-commit install
+          SKIP=sqlfluff-lint,sqlfluff-fix,yamllint,no-commit-to-branch pre-commit run --all-files --verbose
+
+      - name: Run tests with coverage
         run: |
-          pwd
-          ls -la
-          sudo docker ps -a  # List all containers with sudo
-      
-      - name: Install pytest-cov in Docker container
-        run: |
-          sudo docker exec airflow-airflow-webserver-1 bash -c "pip install pytest-cov || python -m pip install pytest-cov"
-      
-      - name: Test the Airflow dag with coverage
-        run: |
-          # Create a simple test script that will run pytest with coverage
-          echo '
-          import subprocess
-          import os
-          
-          # Run pytest with coverage
-          os.chdir("/opt/airflow")
-          result = subprocess.run(
-              ["python", "-m", "pytest", "-v", "test/", "-p", "no:warnings", 
-               "--junitxml=pytest.xml", "--cov=.", "--cov-report=term"],
-              capture_output=True, text=True
-          )
-          
-          # Write output to file
-          with open("pytest-coverage.txt", "w") as f:
-              f.write(result.stdout)
-              f.write(result.stderr)
-          
-          # Print status
-          print("Tests completed with exit code:", result.returncode)
-          print("Results saved to pytest.xml and pytest-coverage.txt")
-          ' > run_tests.py
-          
-          # Copy the script to the container
-          sudo docker cp run_tests.py airflow-airflow-webserver-1:/opt/airflow/run_tests.py
-          
-          # Run the script in the container
-          sudo docker exec airflow-airflow-webserver-1 bash -c "cd /opt/airflow && python run_tests.py"
-      
-      - name: Copy coverage files from Docker container
-        run: |
-          sudo docker cp airflow-airflow-webserver-1:/opt/airflow/pytest.xml ./pytest.xml || echo "pytest.xml not found"
-          sudo docker cp airflow-airflow-webserver-1:/opt/airflow/pytest-coverage.txt ./pytest-coverage.txt || echo "pytest-coverage.txt not found"
-          
-          # Show content of files
-          echo "Content of pytest-coverage.txt:"
-          cat ./pytest-coverage.txt || echo "File not found"
-      
-      - name: Generate proper coverage report
-        run: |
-          # Create a simple script to extract and format coverage information
-          echo '
-          import re
-          import sys
-          
-          # Read the coverage output
-          with open("./pytest-coverage.txt", "r") as f:
-              content = f.read()
-          
-          # Extract coverage percentage using regex
-          match = re.search(r"TOTAL\s+\d+\s+\d+\s+(\d+%)", content)
-          if match:
-              coverage = match.group(1)
-          else:
-              coverage = "0%"
-              
-          # Create formatted coverage report
-          report = f"""
-          ============================= test session starts ==============================
-          platform linux -- Python 3.9.0, pytest-7.0.0, pluggy-1.0.0
-          rootdir: /workspace
-          plugins: cov-4.0.0
-          collected 38 items
-          
-          ...
-          
-          ----------- coverage: platform linux, python 3.9.0-final-0 -----------
-          Name                                    Stmts   Miss  Cover   Missing
-          ---------------------------------------------------------------------
-          TOTAL                                      0      0   {coverage}
-          """
-          
-          # Write to file
-          with open("formatted-coverage.txt", "w") as f:
-              f.write(report)
-          
-          print(f"Generated formatted coverage report with {coverage} coverage")
-          ' > format_coverage.py
-          
-          # Run the script
-          python format_coverage.py
-      
-      - name: Pytest coverage comment
-        id: coverage-comment
-        uses: MishaKav/pytest-coverage-comment@main
+          # For instance, if your tests run on a Dockerized Airflow service:
+          sudo docker exec airflow-airflow-webserver-1 bash -c "pytest --cache-clear --cov=/opt/airflow/dags --cov-report=term-missing /opt/airflow/test/ > pytest-coverage.txt"
+          # Adjust the --cov parameter as necessary for your project
+        
+      - name: Comment coverage
+        uses: coroo/pytest-coverage-commentator@v1.0.2
         with:
-          pytest-coverage-path: ./formatted-coverage.txt
-          junitxml-path: ./pytest.xml
+          pytest-coverage: pytest-coverage.txt
