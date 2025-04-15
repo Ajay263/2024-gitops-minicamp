@@ -1,9 +1,13 @@
 import os
-import pytest
-from airflow.models import DagBag
-from unittest.mock import patch, MagicMock
+from unittest.mock import (
+    MagicMock,
+    patch,
+)
+
 import boto3
 import psycopg2
+import pytest
+from airflow.models import DagBag
 
 # Path to your DAGs folder
 DAG_PATH = "/opt/airflow/dags"

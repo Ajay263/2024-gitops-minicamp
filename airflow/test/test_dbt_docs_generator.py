@@ -1,6 +1,7 @@
+import os
+
 import pytest
 from airflow.models import DagBag
-import os
 
 
 class TestDbtDocsGeneratorDag:
@@ -69,7 +70,7 @@ class TestDbtDocsGeneratorDag:
     def test_save_docs_locally_function(self, dag, mock_os_path_exists, mock_shutil, mock_os_makedirs):
         """Test the save_docs_locally function"""
         from dags.dbt_docs_generator import save_docs_locally
-        
+
         # Call the function
         save_docs_locally("/test/project/dir", "/test/output/dir")
         

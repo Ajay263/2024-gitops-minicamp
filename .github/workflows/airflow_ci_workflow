@@ -1,0 +1,138 @@
+name: Airflow CI Workflow
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'airflow/dags/**'
+      - 'airflow/tests/**'
+  pull_request:
+    paths:
+      - 'airflow/dags/**'
+      - 'airflow/tests/**'
+  workflow_dispatch:
+
+env:
+  TEST_EXECUTION_ENV: prod
+
+jobs:
+  test:
+    name: 'Run Airflow Tests'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.9'
+      
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install apache-airflow pytest pytest-cov allure-pytest pre-commit boto3 awscli pytest-rerunfailures pandas numpy
+      
+      - name: Verify pre-commit config exists
+        run: |
+          if [ ! -f ".pre-commit-config.yaml" ]; then
+            echo "Error: .pre-commit-config.yaml not found"
+            exit 1
+          fi
+      
+      - name: Install and run pre-commit hooks
+        run: |
+          pre-commit install
+          SKIP=sqlfluff-lint,sqlfluff-fix,yamllint,no-commit-to-branch pre-commit run --all-files --verbose
+      
+      - name: Run Airflow tests
+        id: run_tests
+        continue-on-error: true
+        run: |
+          export PYTHONPATH=$PYTHONPATH:$GITHUB_WORKSPACE/airflow/dags
+          cd airflow/tests
+          pytest -xvs --continue-on-collection-errors --reruns 3 --cov=../dags --cov-report=xml:coverage.xml --cov-report=html:coverage_html --alluredir=allure-results
+      
+      - name: Get Allure history
+        uses: actions/checkout@v4
+        if: always()
+        continue-on-error: true
+        with:
+          ref: gh-pages
+          path: gh-pages
+      
+      - name: Upload Coverage Report (HTML)
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: coverage_html
+          path: airflow/tests/coverage_html
+      
+      - name: Upload Allure Results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: allure-results
+          path: airflow/tests/allure-results
+      
+      - name: Generate Allure Report
+        uses: simple-elf/allure-report-action@master
+        if: always()
+        with:
+          allure_results: airflow/tests/allure-results
+          allure_history: allure-history
+      
+      - name: Upload Allure Report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: allure-report
+          path: allure-report
+      
+      - name: Deploy to GitHub Pages
+        if: always() && github.event_name != 'pull_request'
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: allure-history
+          keep_files: false
+      
+      - name: Collect workflow metadata
+        if: always()
+        id: metadata
+        run: |
+          echo "event_name=$GITHUB_EVENT_NAME" >> $GITHUB_OUTPUT
+          echo "workflow=$GITHUB_WORKFLOW" >> $GITHUB_OUTPUT
+          echo "actor=$GITHUB_ACTOR" >> $GITHUB_OUTPUT
+          echo "run_number=$GITHUB_RUN_NUMBER" >> $GITHUB_OUTPUT
+      
+      - name: Add Coverage Comment to PR
+        if: github.event_name == 'pull_request' && always()
+        uses: MishaKav/pytest-coverage-comment@main
+        with:
+          pytest-xml-coverage-path: airflow/tests/coverage.xml
+          title: Airflow Test Coverage Report
+          create-new-comment: true
+          report-only-changed-files: true
+      
+      - name: Check test status and set job output
+        if: always()
+        id: check_status
+        run: |
+          if [ "${{ steps.run_tests.outcome }}" == "failure" ]; then
+            echo "tests_failed=true" >> $GITHUB_OUTPUT
+          else
+            echo "tests_failed=false" >> $GITHUB_OUTPUT
+          fi
+      
+      - name: Fail if tests failed
+        if: steps.check_status.outputs.tests_failed == 'true'
+        run: |
+          echo "Tests failed. Marking workflow as failed."
+          exit 1
