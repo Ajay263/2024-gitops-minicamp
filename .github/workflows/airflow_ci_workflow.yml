@@ -5,7 +5,7 @@ on:
       - main
 jobs:
   trigger-airflow:
-    runs-on: self-hosted  # Use self-hosted runner on your EC2 instance
+    runs-on: self-hosted  
     
     # Add permissions for commenting on PRs
     permissions:
