@@ -7,6 +7,12 @@ jobs:
   trigger-airflow:
     runs-on: self-hosted  # Use self-hosted runner on your EC2 instance
     
+    # Add permissions needed for commenting on PRs
+    permissions:
+      contents: write
+      checks: write
+      pull-requests: write
+    
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
@@ -19,7 +25,7 @@ jobs:
       - name: Install dependencies
         run: |
             python -m pip install --upgrade pip
-            pip install  pytest pytest-cov allure-pytest pre-commit boto3 awscli pytest-rerunfailures pandas numpy
+            pip install pytest pytest-cov allure-pytest pre-commit boto3 awscli pytest-rerunfailures pandas numpy
   
           
       - name: Install and run pre-commit hooks
@@ -34,6 +40,19 @@ jobs:
           ls -la
           sudo docker ps -a  # List all containers with sudo
       
-      - name: Test the Airflow dag
+      - name: Test the Airflow dag with coverage
         run: |
-          sudo docker exec airflow-airflow-webserver-1 bash -c "pytest -v /opt/airflow/test/ -p no:warnings"
+          sudo docker exec airflow-airflow-webserver-1 bash -c "cd /opt/airflow && python -m pytest -v test/ -p no:warnings --junitxml=/opt/airflow/pytest.xml --cov-report=term-missing:skip-covered --cov-report=xml:/opt/airflow/coverage.xml --cov=/opt/airflow/ | tee /opt/airflow/pytest-coverage.txt"
+          
+      - name: Copy coverage files from Docker container
+        run: |
+          sudo docker cp airflow-airflow-webserver-1:/opt/airflow/pytest.xml ./pytest.xml
+          sudo docker cp airflow-airflow-webserver-1:/opt/airflow/coverage.xml ./coverage.xml
+          sudo docker cp airflow-airflow-webserver-1:/opt/airflow/pytest-coverage.txt ./pytest-coverage.txt
+      
+      - name: Pytest coverage comment
+        uses: MishaKav/pytest-coverage-comment@main
+        with:
+          pytest-coverage-path: ./pytest-coverage.txt
+          pytest-xml-coverage-path: ./coverage.xml
+          junitxml-path: ./pytest.xml
