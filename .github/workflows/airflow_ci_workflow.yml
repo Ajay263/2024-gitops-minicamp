@@ -19,13 +19,13 @@ jobs:
 
       - name: Install dependencies
         run: |
-          python -m pip install --upgrade pip
-          pip install pytest pytest-cov boto3 awscli pandas numpy
+            python -m pip install --upgrade pip
+            pip install  pytest pytest-cov allure-pytest pre-commit boto3 awscli pytest-rerunfailures pandas numpy
           
-      - name: Pre-commit hooks
+      - name: Install and run pre-commit hooks
         run: |
-          pre-commit install
-          SKIP=sqlfluff-lint,sqlfluff-fix,yamllint,no-commit-to-branch pre-commit run --all-files --verbose
+              pre-commit install
+              SKIP=sqlfluff-lint,sqlfluff-fix,yamllint,no-commit-to-branch pre-commit run --all-files --verbose
 
       - name: Run tests with coverage
         run: |
