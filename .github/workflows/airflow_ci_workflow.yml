@@ -1,4 +1,4 @@
-name: Trigger Airflow DAG
+name: Airflow DAG
 on:
   push:
     branches:
@@ -11,10 +11,10 @@ jobs:
     
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       
       - name: Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: '3.9'
       
@@ -42,7 +42,7 @@ jobs:
           sudo docker cp airflow-airflow-webserver-1:/opt/airflow/test/allure-results ./allure-results
       
       - name: Get Allure history
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         if: always()
         continue-on-error: true
         with:
@@ -50,14 +50,14 @@ jobs:
           path: gh-pages
       
       - name: Upload Coverage Report (HTML)
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         if: always()
         with:
           name: coverage_html
           path: coverage_html
       
       - name: Upload Allure Results
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         if: always()
         with:
           name: allure-results
@@ -71,7 +71,7 @@ jobs:
           allure_history: allure-history
       
       - name: Upload Allure Report
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         if: always()
         with:
           name: allure-report
