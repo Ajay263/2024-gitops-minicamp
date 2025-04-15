@@ -41,7 +41,7 @@ jobs:
         run: |
           pwd
           ls -la
-          sudo docker ps -a  # List all containers with sudo
+          sudo docker ps -a
 
       - name: Install pytest-cov in Docker container
         run: |
@@ -49,8 +49,7 @@ jobs:
 
       - name: Run tests and build coverage file
         run: |
-          # Adjust this command if your test/ directory is elsewhere or you want to target a specific module
-          pytest --cache-clear --cov=. test/ > pytest-coverage.txt
+          pytest --cache-clear --cov=. > pytest-coverage.txt
 
       - name: Comment coverage on PR
         if: github.event_name == 'pull_request'
@@ -63,6 +62,5 @@ jobs:
           sudo docker cp airflow-airflow-webserver-1:/opt/airflow/pytest.xml ./pytest.xml || echo "pytest.xml not found"
           sudo docker cp airflow-airflow-webserver-1:/opt/airflow/pytest-coverage.txt ./pytest-coverage.txt || echo "pytest-coverage.txt not found"
 
-          # Show content of files
           echo "Content of pytest-coverage.txt:"
           cat ./pytest-coverage.txt || echo "File not found"
