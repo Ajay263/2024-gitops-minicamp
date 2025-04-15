@@ -1,66 +1,53 @@
 name: Airflow CI workflow
-
 on:
-  pull_request:
-    branches:
-      - '*'
   push:
     branches:
       - main
-
 jobs:
   trigger-airflow:
-    runs-on: self-hosted
-
+    runs-on: self-hosted  
+    env:
+      CONTAINER_NAME: airflow-airflow-webserver-1
+    # Add permissions for commenting on PRs
     permissions:
       contents: write
       checks: write
       pull-requests: write
-
+    
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
-
+      
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
           python-version: '3.9'
-
+          
       - name: Install dependencies
         run: |
-          python -m pip install --upgrade pip
-          pip install pytest pytest-cov allure-pytest pre-commit boto3 awscli pytest-rerunfailures pandas numpy
-          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
-
+            python -m pip install --upgrade pip
+            pip install pytest pytest-cov allure-pytest pre-commit boto3 awscli pytest-rerunfailures pandas numpy
+          
       - name: Install and run pre-commit hooks
         run: |
-          pre-commit install
-          SKIP=sqlfluff-lint,sqlfluff-fix,yamllint,no-commit-to-branch pre-commit run --all-files --verbose
-
+              pre-commit install
+              SKIP=sqlfluff-lint,sqlfluff-fix,yamllint,no-commit-to-branch pre-commit run --all-files --verbose
+    
       - name: Check environment
         run: |
           pwd
           ls -la
-          sudo docker ps -a
-
+          sudo docker ps -a  # List all containers with sudo
+      
       - name: Install pytest-cov in Docker container
         run: |
-          sudo docker exec airflow-airflow-webserver-1 bash -c "pip install pytest-cov || python -m pip install pytest-cov"
-
-      - name: Run tests and build coverage file
-        run: |
-          pytest --cache-clear --cov=. > pytest-coverage.txt
-
-      - name: Comment coverage on PR
-        if: github.event_name == 'pull_request'
-        uses: coroo/pytest-coverage-commentator@v1.0.2
-        with:
-          pytest-coverage: pytest-coverage.txt
-
+          sudo docker exec $CONTAINER_NAME bash -c "pip install pytest-cov || python -m pip install pytest-cov"
+      
       - name: Copy coverage files from Docker container
         run: |
-          sudo docker cp airflow-airflow-webserver-1:/opt/airflow/pytest.xml ./pytest.xml || echo "pytest.xml not found"
-          sudo docker cp airflow-airflow-webserver-1:/opt/airflow/pytest-coverage.txt ./pytest-coverage.txt || echo "pytest-coverage.txt not found"
-
+          sudo docker cp $CONTAINER_NAME:/opt/airflow/pytest.xml ./pytest.xml || echo "pytest.xml not found"
+          sudo docker cp $CONTAINER_NAME:/opt/airflow/pytest-coverage.txt ./pytest-coverage.txt || echo "pytest-coverage.txt not found"
+          
+          # Show content of files
           echo "Content of pytest-coverage.txt:"
           cat ./pytest-coverage.txt || echo "File not found"
