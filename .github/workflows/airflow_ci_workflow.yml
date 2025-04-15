@@ -62,11 +62,22 @@ jobs:
           pre-commit install
           SKIP=sqlfluff-lint,sqlfluff-fix,yamllint,no-commit-to-branch pre-commit run --all-files --verbose
       
+      - name: Debug directory structure
+        run: |
+          ls -la
+          ls -la airflow/
+          ls -la airflow/dag/ || echo "dag directory not found"
+          ls -la airflow/dags/ || echo "dags directory not found"
+      
       - name: Run Airflow tests
         id: run_tests
         continue-on-error: true
         run: |
-          export PYTHONPATH=$PYTHONPATH:$GITHUB_WORKSPACE/airflow/dag
+          export AIRFLOW_HOME=$GITHUB_WORKSPACE/airflow
+          export PYTHONPATH=$PYTHONPATH:$GITHUB_WORKSPACE:$GITHUB_WORKSPACE/airflow/dag:$GITHUB_WORKSPACE/airflow/dags
+          mkdir -p $AIRFLOW_HOME/dags
+          # Copy DAG files to Airflow expected location
+          cp -r airflow/dag/* $AIRFLOW_HOME/dags/ 2>/dev/null || echo "No DAGs to copy"
           cd airflow/test
           pytest -xvs --continue-on-collection-errors --reruns 3 --cov=../dag --cov-report=xml:coverage.xml --cov-report=html:coverage_html --alluredir=allure-results
       
