@@ -1,17 +1,24 @@
 import os
 import shutil
-from datetime import datetime, timedelta
-from airflow.decorators import dag, task
-from cosmos.operators import DbtDocsOperator
-from cosmos import ProfileConfig
-from cosmos.profiles import RedshiftUserPasswordProfileMapping
+from datetime import (
+    datetime,
+    timedelta,
+)
+
+import boto3
+import psycopg2
+from airflow.decorators import (
+    dag,
+    task,
+)
+from airflow.hooks.base import BaseHook
 from airflow.operators.bash import BashOperator
 from airflow.utils.task_group import TaskGroup
-from airflow.hooks.base import BaseHook
-import psycopg2
-import boto3
+from cosmos import ProfileConfig
+from cosmos.operators import DbtDocsOperator
+from cosmos.profiles import RedshiftUserPasswordProfileMapping
 
-# Environment setup.
+# Environment setup
 env = 'local'
 dbt_path = f"{os.environ['AIRFLOW_HOME']}/dbt_venv/bin"
 os.environ['PATH'] = f"{dbt_path}:{os.environ['PATH']}"
@@ -55,7 +62,7 @@ def save_docs_locally(project_dir: str, output_dir: str, **kwargs):
         else:
             print(f"Warning: {src} not found, skipping.")
     
-    # Copy assets directory if it exists
+    # Copy assets directory if it exist
     assets_src = os.path.join(project_dir, "target/assets")  # Changed from "assets" to "target/assets"
     assets_dst = os.path.join(output_dir, "assets")
     
