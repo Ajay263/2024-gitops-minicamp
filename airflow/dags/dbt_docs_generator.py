@@ -23,7 +23,7 @@ env = 'local'
 dbt_path = f"{os.environ['AIRFLOW_HOME']}/dbt_venv/bin"
 os.environ['PATH'] = f"{dbt_path}:{os.environ['PATH']}"
 
-# Profile configuration for Redshift.
+# Profile configuration for Redshift
 profile_config = ProfileConfig(
     profile_name="default",
     target_name="dev",
