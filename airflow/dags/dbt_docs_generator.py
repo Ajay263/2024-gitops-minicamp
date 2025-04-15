@@ -18,7 +18,7 @@ from cosmos import ProfileConfig
 from cosmos.operators import DbtDocsOperator
 from cosmos.profiles import RedshiftUserPasswordProfileMapping
 
-# Environment setup.
+# Environment setup
 env = 'local'
 dbt_path = f"{os.environ['AIRFLOW_HOME']}/dbt_venv/bin"
 os.environ['PATH'] = f"{dbt_path}:{os.environ['PATH']}"
