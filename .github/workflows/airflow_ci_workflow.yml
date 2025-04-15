@@ -44,6 +44,9 @@ jobs:
           sudo apt-get install -y --no-install-recommends \
             gcc \
             g++ \
+            make \
+            git \
+            python3-distutils \
             libpq-dev \
             postgresql-client
       
@@ -52,6 +55,9 @@ jobs:
           python -m pip install --upgrade pip
           pip install pytest pytest-cov allure-pytest pytest-rerunfailures pre-commit psycopg2
           pip install apache-airflow pandas boto3
+          # Install additional packages from your Dockerfile
+          pip install apache-airflow[amazon] apache-airflow-providers-slack apache-airflow[statsd]
+          pip install apache-airflow-providers-openlineage astronomer-cosmos pydantic==2.8.2 boto3 pydantic==2.8.2
           if [ -f "requirements.txt" ]; then
             pip install -r requirements.txt
           fi
@@ -68,6 +74,8 @@ jobs:
           ls -la airflow/
           ls -la airflow/dag/ || echo "dag directory not found"
           ls -la airflow/dags/ || echo "dags directory not found"
+          echo "Python path: $PYTHONPATH"
+          pip list | grep cosmos || echo "Cosmos not found in pip list"
       
       - name: Run Airflow tests
         id: run_tests
@@ -79,6 +87,8 @@ jobs:
           # Copy DAG files to Airflow expected location
           cp -r airflow/dag/* $AIRFLOW_HOME/dags/ 2>/dev/null || echo "No DAGs to copy"
           cd airflow/test
+          python -c "import sys; print(sys.path)" # Debug Python path
+          python -c "import pkg_resources; print([p.project_name for p in pkg_resources.working_set])" # List installed packages
           pytest -xvs --continue-on-collection-errors --reruns 3 --cov=../dag --cov-report=xml:coverage.xml --cov-report=html:coverage_html --alluredir=allure-results
       
       - name: Get Allure history
