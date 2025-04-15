@@ -11,7 +11,7 @@ from airflow.providers.amazon.aws.operators.glue import GlueJobOperator
 
 from airflow import DAG
 
-# Add the path for custom modules if needed
+# Add the path for custom modules if needed.
 sys.path.append('/opt/airflow')
 
 # Default arguments for the DAG
