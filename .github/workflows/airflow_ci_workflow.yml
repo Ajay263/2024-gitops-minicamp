@@ -5,7 +5,7 @@ on:
 
 jobs:
   pytest-coverage:
-    runs-on: self-hosted  # Matches your self-hosted runner setup
+    runs-on: self-hosted  # Matches your shosted runner setup
     
     steps:
       - name: Checkout repository
