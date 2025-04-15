@@ -1,16 +1,119 @@
 "DESCRIPTION","DURATION IN MS","NAME","PARENT SUITE","START TIME","STATUS","STOP TIME","SUB SUITE","SUITE","TEST CLASS","TEST METHOD"
-"Test renaming columns to lowercase and replacing special characters.","32","test_rename_and_lowercase_columns","","Mon Apr 14 12:27:11 GMT 2025","passed","Mon Apr 14 12:27:11 GMT 2025","","test_dates","",""
-"Test renaming columns to lowercase.","42","test_rename_columns_to_lowercase","","Mon Apr 14 12:27:10 GMT 2025","passed","Mon Apr 14 12:27:10 GMT 2025","","test_customer_targets","",""
-"Test dropping rows with null 'week_no' values.","159","test_drop_invalid_rows","","Mon Apr 14 12:27:13 GMT 2025","passed","Mon Apr 14 12:27:13 GMT 2025","","test_dates","",""
-"Test cleaning and transforming customer targets data.","581","test_clean_customer_targets_data","","Mon Apr 14 12:27:10 GMT 2025","passed","Mon Apr 14 12:27:11 GMT 2025","","test_customer_targets","",""
-"Test cleaning special characters from the 'date' and 'mmm_yy' columns.","400","test_clean_special_characters","","Mon Apr 14 12:27:11 GMT 2025","passed","Mon Apr 14 12:27:12 GMT 2025","","test_dates","",""
-"Test cleaning the 'week_no' column by removing 'W' and casting to integer.","181","test_clean_week_no_column","","Mon Apr 14 12:27:12 GMT 2025","passed","Mon Apr 14 12:27:13 GMT 2025","","test_dates","",""
-"Test formatting the 'date' column to 'dd-MM-yyyy' format.","503","test_format_date_column","","Mon Apr 14 12:27:12 GMT 2025","passed","Mon Apr 14 12:27:12 GMT 2025","","test_dates","",""
-"Test cleaning the CUSTOMER_ID column.","2158","test_clean_customer_id","","Mon Apr 14 12:27:08 GMT 2025","passed","Mon Apr 14 12:27:10 GMT 2025","","test_customer_targets","",""
-"Test formatting the 'mmm_yy' column to 'dd-MM-yyyy' format.","199","test_format_mmm_yy_column","","Mon Apr 14 12:27:12 GMT 2025","passed","Mon Apr 14 12:27:12 GMT 2025","","test_dates","",""
-"Test dropping rows with invalid values.","337","test_drop_invalid_rows","","Mon Apr 14 12:27:10 GMT 2025","passed","Mon Apr 14 12:27:10 GMT 2025","","test_customer_targets","",""
-"Test loading dates data.","22","test_load_dates_data","","Mon Apr 14 12:27:11 GMT 2025","passed","Mon Apr 14 12:27:11 GMT 2025","","test_dates","",""
-"Test loading customer targets data.","1738","test_load_customer_targets_data","","Mon Apr 14 12:27:06 GMT 2025","passed","Mon Apr 14 12:27:08 GMT 2025","","test_customer_targets","",""
-"Test filtering out rows with null or unwanted values.","225","test_filter_unwanted_values","","Mon Apr 14 12:27:12 GMT 2025","passed","Mon Apr 14 12:27:12 GMT 2025","","test_dates","",""
-"Test cleaning and transforming dates data.","448","test_clean_dates_data","","Mon Apr 14 12:27:13 GMT 2025","passed","Mon Apr 14 12:27:13 GMT 2025","","test_dates","",""
-"Test replacing negative values in target columns with None.","347","test_handle_negative_values","","Mon Apr 14 12:27:10 GMT 2025","passed","Mon Apr 14 12:27:10 GMT 2025","","test_customer_targets","",""
+"
+    Test if a DAG has retries set to an appropriate value.
+    
+    Retries help with task resilience. This test ensures tasks will retry
+    at least twice before failing permanently.
+    ","0","test_dag_retries[dags/etl_dag.py]","test","Tue Apr 15 09:43:24 GMT 2025","passed","Tue Apr 15 09:43:24 GMT 2025","","test_dags_general","",""
+"Test the execution of a Glue job task","0","test_glue_job_execution","test","Tue Apr 15 09:43:34 GMT 2025","broken","Tue Apr 15 09:43:34 GMT 2025","TestEtlPipelineDag","test_etl_dag","",""
+"
+    Test for import errors on a file.
+    
+    This test checks each DAG file for import errors and provides detailed
+    error messages if problems are found.
+    ","0","test_file_imports[None-None]","test","Tue Apr 15 09:43:24 GMT 2025","passed","Tue Apr 15 09:43:24 GMT 2025","","test_dags_general","",""
+"Test that the DAG has the expected schedule","0","test_dag_schedule","test","Tue Apr 15 09:43:30 GMT 2025","broken","Tue Apr 15 09:43:30 GMT 2025","TestNexabrandsDbtIncrementalDag","test_dbt_simple_task_group","",""
+"Test that the DAG is loaded without errors","1","test_dag_loaded","test","Tue Apr 15 09:43:31 GMT 2025","failed","Tue Apr 15 09:43:31 GMT 2025","TestEtlPipelineDag","test_etl_dag","",""
+"Test task dependencies in the DAG","0","test_task_dependencies","test","Tue Apr 15 09:43:28 GMT 2025","broken","Tue Apr 15 09:43:28 GMT 2025","TestNexabrandsDbtIncrementalDag","test_dbt_simple_task_group","",""
+"Test task dependencies in the DAG","0","test_task_dependencies","test","Tue Apr 15 09:43:33 GMT 2025","broken","Tue Apr 15 09:43:33 GMT 2025","TestEtlPipelineDag","test_etl_dag","",""
+"
+        Test that all DAGs have descriptions.
+        
+        Descriptions provide context about what a DAG does and are
+        important for documentation purposes.
+        ","0","test_all_dags_have_description","test","Tue Apr 15 09:43:24 GMT 2025","passed","Tue Apr 15 09:43:24 GMT 2025","TestDagsGeneral","test_dags_general","",""
+"Test the upload_docs_to_s3 task","0","test_upload_docs_to_s3_task","test","Tue Apr 15 09:43:26 GMT 2025","broken","Tue Apr 15 09:43:26 GMT 2025","TestDbtDocsGeneratorDag","test_dbt_docs_generator","",""
+"
+        Test that all DAGs have start dates.
+        
+        Start dates are required for scheduling and determine when
+        a DAG should begin execution.
+        ","0","test_all_dags_have_start_dates","test","Tue Apr 15 09:43:24 GMT 2025","passed","Tue Apr 15 09:43:24 GMT 2025","TestDagsGeneral","test_dags_general","",""
+"
+    Test if a DAG is tagged and if those tags are in the approved list.
+    
+    Tags help with organization in the Airflow UI. This test ensures all
+    DAGs have tags and optionally checks that they are from an approved list.
+    ","0","test_dag_tags[dags/dbt_docs_generator.py]","test","Tue Apr 15 09:43:24 GMT 2025","passed","Tue Apr 15 09:43:24 GMT 2025","","test_dags_general","",""
+"Test the save_docs_locally function","0","test_save_docs_locally_function","test","Tue Apr 15 09:43:27 GMT 2025","broken","Tue Apr 15 09:43:27 GMT 2025","TestDbtDocsGeneratorDag","test_dbt_docs_generator","",""
+"Test the structure of the DAG","0","test_dag_structure","test","Tue Apr 15 09:43:25 GMT 2025","broken","Tue Apr 15 09:43:25 GMT 2025","TestDbtDocsGeneratorDag","test_dbt_docs_generator","",""
+"
+        Test that all DAGs have tags.
+        
+        Tags help with organization and filtering in the Airflow UI and
+        are considered a best practice for DAG management.
+        ","1","test_all_dags_have_tags","test","Tue Apr 15 09:43:24 GMT 2025","passed","Tue Apr 15 09:43:24 GMT 2025","TestDagsGeneral","test_dags_general","",""
+"
+    Test if a DAG has retries set to an appropriate value.
+    
+    Retries help with task resilience. This test ensures tasks will retry
+    at least twice before failing permanently.
+    ","1","test_dag_retries[dags/dbt_docs_generator.py]","test","Tue Apr 15 09:43:24 GMT 2025","passed","Tue Apr 15 09:43:24 GMT 2025","","test_dags_general","",""
+"Test the basic attributes of the DAG","0","test_dag_attributes","test","Tue Apr 15 09:43:31 GMT 2025","broken","Tue Apr 15 09:43:31 GMT 2025","TestEtlPipelineDag","test_etl_dag","",""
+"Test that task groups are configured correctly","0","test_task_group_configuration","test","Tue Apr 15 09:43:30 GMT 2025","broken","Tue Apr 15 09:43:30 GMT 2025","TestNexabrandsDbtIncrementalDag","test_dbt_simple_task_group","",""
+"Test the default_args of the DAG","0","test_dag_default_args","test","Tue Apr 15 09:43:31 GMT 2025","broken","Tue Apr 15 09:43:31 GMT 2025","TestEtlPipelineDag","test_etl_dag","",""
+"Test DAG parameters are properly configured","0","test_dag_parameters","test","Tue Apr 15 09:43:29 GMT 2025","broken","Tue Apr 15 09:43:29 GMT 2025","TestNexabrandsDbtIncrementalDag","test_dbt_simple_task_group","",""
+"
+    Test the integrity of each DAG file by dynamically loading it.
+    
+    This test checks that:
+    1. The file can be imported without errors
+    2. The file contains at least one DAG object
+    3. Each DAG doesn't contain cycles
+    
+    This is a thorough test that actually loads the DAG code rather than
+    relying on the DagBag parser.
+    ","0","test_dag_integrity[dag_file0]","test","Tue Apr 15 09:43:24 GMT 2025","skipped","Tue Apr 15 09:43:24 GMT 2025","","test_dags_general","",""
+"
+        Test that we have the expected number of DAGs.
+        
+        This test helps detect when DAGs are accidentally removed or added
+        without updating the expected count.
+        ","0","test_dag_count","test","Tue Apr 15 09:43:24 GMT 2025","failed","Tue Apr 15 09:43:24 GMT 2025","TestDagsGeneral","test_dags_general","",""
+"
+        Test that all DAGs have owners.
+        
+        Owner information helps identify who is responsible for
+        a DAG in case of issues or questions.
+        ","0","test_all_dags_have_owners","test","Tue Apr 15 09:43:24 GMT 2025","passed","Tue Apr 15 09:43:24 GMT 2025","TestDagsGeneral","test_dags_general","",""
+"
+    Test if a DAG is tagged and if those tags are in the approved list.
+    
+    Tags help with organization in the Airflow UI. This test ensures all
+    DAGs have tags and optionally checks that they are from an approved list.
+    ","0","test_dag_tags[dags/etl_dag.py]","test","Tue Apr 15 09:43:24 GMT 2025","passed","Tue Apr 15 09:43:24 GMT 2025","","test_dags_general","",""
+"Test that terminal tasks connect to the end task","0","test_terminal_tasks","test","Tue Apr 15 09:43:33 GMT 2025","broken","Tue Apr 15 09:43:33 GMT 2025","TestEtlPipelineDag","test_etl_dag","",""
+"Test that the DAG is loaded","0","test_dag_loaded","test","Tue Apr 15 09:43:24 GMT 2025","broken","Tue Apr 15 09:43:24 GMT 2025","TestDbtDocsGeneratorDag","test_dbt_docs_generator","",""
+"
+        Test that there are no duplicate task IDs within DAGs.
+        
+        Duplicate task IDs within a DAG can cause conflicts and confusion
+        when monitoring or debugging workflows.
+        ","0","test_no_duplicate_task_ids","test","Tue Apr 15 09:43:24 GMT 2025","passed","Tue Apr 15 09:43:24 GMT 2025","TestDagsGeneral","test_dags_general","",""
+"Test the structure of the DAG","0","test_dag_structure","test","Tue Apr 15 09:43:28 GMT 2025","broken","Tue Apr 15 09:43:28 GMT 2025","TestNexabrandsDbtIncrementalDag","test_dbt_simple_task_group","",""
+"Test the source freshness task","0","test_source_freshness_task","test","Tue Apr 15 09:43:29 GMT 2025","broken","Tue Apr 15 09:43:29 GMT 2025","TestNexabrandsDbtIncrementalDag","test_dbt_simple_task_group","",""
+"Test that the DAG is loaded","0","test_dag_loaded","test","Tue Apr 15 09:43:27 GMT 2025","broken","Tue Apr 15 09:43:27 GMT 2025","TestNexabrandsDbtIncrementalDag","test_dbt_simple_task_group","",""
+"Test that the failure callback is properly configured","3","test_failure_callback","test","Tue Apr 15 09:43:34 GMT 2025","passed","Tue Apr 15 09:43:34 GMT 2025","TestEtlPipelineDag","test_etl_dag","",""
+"
+        Test that there are no cycles in DAGs.
+        
+        Cycles in DAG task dependencies would create infinite loops,
+        which Airflow doesn't allow. This test ensures the DAG is properly
+        structured as a directed acyclic graph.
+        ","1","test_no_cycles","test","Tue Apr 15 09:43:24 GMT 2025","passed","Tue Apr 15 09:43:24 GMT 2025","TestDagsGeneral","test_dags_general","",""
+"
+        Test that there are no DAG import errors.
+        
+        Import errors usually indicate syntax errors or missing dependencies
+        that prevent the DAG from being properly loaded.
+        ","1","test_dagbag_import_errors","test","Tue Apr 15 09:43:24 GMT 2025","failed","Tue Apr 15 09:43:24 GMT 2025","TestDagsGeneral","test_dags_general","",""
+"Test the verify_redshift_connection task","0","test_verify_redshift_connection_task","test","Tue Apr 15 09:43:26 GMT 2025","broken","Tue Apr 15 09:43:26 GMT 2025","TestDbtDocsGeneratorDag","test_dbt_docs_generator","",""
+"
+    Test for import errors on a file.
+    
+    This test checks each DAG file for import errors and provides detailed
+    error messages if problems are found.
+    ","1","test_file_imports[dags/dbt_simple_task_group.py]","test","Tue Apr 15 09:43:24 GMT 2025","broken","Tue Apr 15 09:43:24 GMT 2025","","test_dags_general","",""
+"Test the configuration of Glue job tasks","0","test_glue_job_configurations","test","Tue Apr 15 09:43:32 GMT 2025","broken","Tue Apr 15 09:43:32 GMT 2025","TestEtlPipelineDag","test_etl_dag","",""
+"Test the structure of the DAG","0","test_dag_structure","test","Tue Apr 15 09:43:32 GMT 2025","broken","Tue Apr 15 09:43:32 GMT 2025","TestEtlPipelineDag","test_etl_dag","",""
+"Test task dependencies in the DAG","0","test_task_dependencies","test","Tue Apr 15 09:43:25 GMT 2025","broken","Tue Apr 15 09:43:25 GMT 2025","TestDbtDocsGeneratorDag","test_dbt_docs_generator","",""
