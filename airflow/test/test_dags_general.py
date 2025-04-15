@@ -5,7 +5,10 @@ import os
 from contextlib import contextmanager
 
 import pytest
-from airflow.models import DAG, DagBag
+from airflow.models import (
+    DAG,
+    DagBag,
+)
 
 
 @contextmanager

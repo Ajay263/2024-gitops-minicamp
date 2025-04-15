@@ -1,6 +1,11 @@
+from unittest.mock import (
+    MagicMock,
+    patch,
+)
+
 import pytest
 from airflow.models import DagBag
-from unittest.mock import patch, MagicMock
+
 
 class TestEtlPipelineDag:
     """Tests specific to the ETL Pipeline DAG"""
@@ -141,9 +146,9 @@ class TestEtlPipelineDag:
     def test_failure_callback(self, mock_slack_notify):
         """Test that the failure callback is properly configured"""
         # Import the DAG module to access its default_args
-        from airflow.models import TaskInstance
         import slack_notify
-        
+        from airflow.models import TaskInstance
+
         # Create a mock context for the failure callback
         context = {
             'dag': MagicMock(),

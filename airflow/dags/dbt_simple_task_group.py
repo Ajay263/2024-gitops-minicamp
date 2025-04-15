@@ -1,6 +1,7 @@
 import os
 
 import pendulum
+import slack_notify
 from airflow.decorators import dag
 from airflow.models.param import Param
 from airflow.operators.bash import BashOperator
@@ -17,7 +18,6 @@ from cosmos.constants import (
     TestBehavior,
 )
 from cosmos.profiles import RedshiftUserPasswordProfileMapping
-import slack_notify  
 
 # Profile configuration for Redshift
 profile_config = ProfileConfig(

@@ -1,15 +1,22 @@
 import os
 import shutil
-from datetime import datetime, timedelta
-from airflow.decorators import dag, task
-from cosmos.operators import DbtDocsOperator
-from cosmos import ProfileConfig
-from cosmos.profiles import RedshiftUserPasswordProfileMapping
+from datetime import (
+    datetime,
+    timedelta,
+)
+
+import boto3
+import psycopg2
+from airflow.decorators import (
+    dag,
+    task,
+)
+from airflow.hooks.base import BaseHook
 from airflow.operators.bash import BashOperator
 from airflow.utils.task_group import TaskGroup
-from airflow.hooks.base import BaseHook
-import psycopg2
-import boto3
+from cosmos import ProfileConfig
+from cosmos.operators import DbtDocsOperator
+from cosmos.profiles import RedshiftUserPasswordProfileMapping
 
 # Environment setup.
 env = 'local'

@@ -1,14 +1,15 @@
-"""
-ETL Pipeline using AWS Glue Jobs
-This DAG orchestrates an ETL workflow using AWS Glue jobs.
-"""
-from datetime import datetime, timedelta
+import logging
+import sys
+from datetime import (
+    datetime,
+    timedelta,
+)
+
+import slack_notify
 from airflow.operators.dummy_operator import DummyOperator
 from airflow.providers.amazon.aws.operators.glue import GlueJobOperator
+
 from airflow import DAG
-import sys
-import logging
-import slack_notify  
 
 # Add the path for custom modules if needed
 sys.path.append('/opt/airflow')

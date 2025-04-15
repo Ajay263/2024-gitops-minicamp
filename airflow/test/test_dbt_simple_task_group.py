@@ -1,6 +1,8 @@
+import os
+
 import pytest
 from airflow.models import DagBag
-import os
+
 
 class TestNexabrandsDbtIncrementalDag:
     """Tests specific to the nexabrands_dbt_incremental_dag DAG"""
