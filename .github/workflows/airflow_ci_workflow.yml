@@ -1,24 +1,22 @@
 name: Trigger Airflow DAG
-
 on:
   push:
     branches:
       - main
-
 jobs:
   trigger-airflow:
     runs-on: self-hosted  # Use self-hosted runner on your EC2 instance
     
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v3
-    
-    - name: Check environment
-      run: |
-        pwd
-        ls -la
-        docker ps -a  # List all containers
-    
-    - name: Test the Airflow dag
-      run: |
-        sudo docker exec airflow-airflow-webserver-1 bash -c "pytest -v /opt/airflow/test/ -p no:warnings"
+      - name: Checkout repository
+        uses: actions/checkout@v3
+      
+      - name: Check environment
+        run: |
+          pwd
+          ls -la
+          sudo docker ps -a  # List all containers with sudo
+      
+      - name: Test the Airflow dag
+        run: |
+          sudo docker exec airflow-airflow-webserver-1 bash -c "pytest -v /opt/airflow/test/ -p no:warnings"
