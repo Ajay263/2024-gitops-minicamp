@@ -7,6 +7,9 @@ sources:
     loader: s3
     tables:
       - name: customer_targets
+        config:
+          contract:
+             enforced: true
         identifier: customer_targets
         external:
           location: "s3://nexabrand-prod-target/customer_targets/"
@@ -18,12 +21,20 @@ sources:
         columns:
           - name: customer_id
             data_type: bigint
+            constraints:
+              - type: not_null
           - name: ontime_target
             data_type: real
+            constraints:
+              - type: not_null
           - name: infull_target
             data_type: real
+            constraints:
+              - type: not_null
           - name: otif_target
             data_type: real
+            constraints:
+              - type: not_null
 
       - name: date
         identifier: dates
