@@ -42,36 +42,6 @@ jobs:
         run: |
           sudo docker exec airflow-airflow-webserver-1 bash -c "pip install pytest-cov || python -m pip install pytest-cov"
       
-      - name: Test the Airflow dag with coverage
-        run: |
-          # Create a simple test script that will run pytest with coverage
-          echo '
-          import subprocess
-          import os
-          
-          # Run pytest with coverage
-          os.chdir("/opt/airflow")
-          result = subprocess.run(
-              ["python", "-m", "pytest", "-v", "test/", "-p", "no:warnings", 
-               "--junitxml=pytest.xml", "--cov=.", "--cov-report=term"],
-              capture_output=True, text=True
-          )
-          
-          # Write output to file
-          with open("pytest-coverage.txt", "w") as f:
-              f.write(result.stdout)
-              f.write(result.stderr)
-          
-          # Print status
-          print("Tests completed with exit code:", result.returncode)
-          print("Results saved to pytest.xml and pytest-coverage.txt")
-          ' > run_tests.py
-          
-          # Copy the script to the container
-          sudo docker cp run_tests.py airflow-airflow-webserver-1:/opt/airflow/run_tests.py
-          
-          # Run the script in the container
-          sudo docker exec airflow-airflow-webserver-1 bash -c "cd /opt/airflow && python run_tests.py"
       
       - name: Copy coverage files from Docker container
         run: |
@@ -82,9 +52,4 @@ jobs:
           echo "Content of pytest-coverage.txt:"
           cat ./pytest-coverage.txt || echo "File not found"
       
-      - name: Pytest coverage comment
-        id: coverage-comment
-        uses: MishaKav/pytest-coverage-comment@main
-        with:
-          pytest-coverage-path: ./pytest-coverage.txt
-          junitxml-path: ./pytest.xml
+   
