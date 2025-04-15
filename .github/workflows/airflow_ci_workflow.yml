@@ -14,14 +14,12 @@ on:
       - 'airflow/test/**'
       - 'airflow/Dockerfile'
       - 'requirements.txt'
-      - 'requirements_dbt_venv.txt'
   pull_request:
     paths:
       - 'airflow/dag/**'
       - 'airflow/test/**'
       - 'airflow/Dockerfile'
       - 'requirements.txt'
-      - 'requirements_dbt_venv.txt'
   workflow_dispatch:
 
 env:
@@ -35,52 +33,42 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
       
-      - name: Debug directory structure
-        run: |
-          ls -la
-          ls -la airflow || echo "airflow directory not found"
-          find airflow -type f -name "Dockerfile" | sort
-      
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-      
-      - name: Build Airflow Test Image
-        uses: docker/build-push-action@v5
+      - name: Set up Python 3.9
+        uses: actions/setup-python@v5
         with:
-          context: ./airflow
-          file: ./airflow/Dockerfile
-          load: true
-          tags: airflow-test:latest
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          python-version: '3.9'
       
-      - name: Test Docker image
+      - name: Install system dependencies
         run: |
-          docker run --rm airflow-test:latest bash -c "echo 'Testing Docker image'"
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            gcc \
+            g++ \
+            libpq-dev \
+            postgresql-client
       
-      - name: Install Test Dependencies in Docker
+      - name: Install Python dependencies
         run: |
-          docker run --rm -v ${{ github.workspace }}:/app -w /app airflow-test:latest bash -c "python -m pip install pytest pytest-cov allure-pytest pytest-rerunfailures pre-commit"
-      
-      - name: Run Pre-commit in Docker
-        continue-on-error: true
-        run: |
-          if [ -f ".pre-commit-config.yaml" ]; then
-            docker run --rm -v ${{ github.workspace }}:/app -w /app airflow-test:latest bash -c "cd /app && git init && git add . && pre-commit install && SKIP=sqlfluff-lint,sqlfluff-fix,yamllint,no-commit-to-branch pre-commit run --all-files --verbose"
-          else
-            echo "No pre-commit config found, skipping"
+          python -m pip install --upgrade pip
+          pip install pytest pytest-cov allure-pytest pytest-rerunfailures pre-commit psycopg2
+          pip install apache-airflow pandas boto3
+          if [ -f "requirements.txt" ]; then
+            pip install -r requirements.txt
           fi
       
-      - name: Run Airflow Tests in Docker
+      - name: Install and run pre-commit hooks
+        if: hashFiles('.pre-commit-config.yaml') != ''
+        run: |
+          pre-commit install
+          SKIP=sqlfluff-lint,sqlfluff-fix,yamllint,no-commit-to-branch pre-commit run --all-files --verbose
+      
+      - name: Run Airflow tests
         id: run_tests
         continue-on-error: true
         run: |
-          docker run --rm \
-            -v ${{ github.workspace }}:/app \
-            -w /app \
-            -e PYTHONPATH=/app/airflow/dag \
-            airflow-test:latest \
-            bash -c "cd /app/airflow/test && python -m pytest -xvs --continue-on-collection-errors --reruns 3 --cov=../dag --cov-report=xml:coverage.xml --cov-report=html:coverage_html --alluredir=allure-results"
+          export PYTHONPATH=$PYTHONPATH:$GITHUB_WORKSPACE/airflow/dag
+          cd airflow/test
+          pytest -xvs --continue-on-collection-errors --reruns 3 --cov=../dag --cov-report=xml:coverage.xml --cov-report=html:coverage_html --alluredir=allure-results
       
       - name: Get Allure history
         uses: actions/checkout@v4
@@ -126,7 +114,16 @@ jobs:
           publish_dir: allure-history
           keep_files: false
       
-      - name: Check test exit code
+      - name: Add Coverage Comment to PR
+        if: github.event_name == 'pull_request' && always()
+        uses: MishaKav/pytest-coverage-comment@main
+        with:
+          pytest-xml-coverage-path: airflow/test/coverage.xml
+          title: Airflow Test Coverage Report
+          create-new-comment: true
+          report-only-changed-files: true
+      
+      - name: Check test status and set job output
         if: always()
         id: check_status
         run: |
