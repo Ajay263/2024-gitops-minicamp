@@ -1,13 +1,12 @@
-name: AIRFLOW TEST
-
+name: PR Coverage Comment
 on:
   pull_request:
-    branches:
-      - '*'   # Triggers on PRs to any branch
+    branches: [ '*' ]
 
 jobs:
-  test-and-comment:
-    runs-on: self-hosted  # This example uses a hosted runner; update if you need a self-hosted one
+  pytest-coverage:
+    runs-on: self-hosted  # Matches your self-hosted runner setup
+    
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
@@ -19,21 +18,18 @@ jobs:
 
       - name: Install dependencies
         run: |
-            python -m pip install --upgrade pip
-            pip install  pytest pytest-cov allure-pytest pre-commit boto3 awscli pytest-rerunfailures pandas numpy
-          
-      - name: Install and run pre-commit hooks
-        run: |
-              pre-commit install
-              SKIP=sqlfluff-lint,sqlfluff-fix,yamllint,no-commit-to-branch pre-commit run --all-files --verbose
+          python -m pip install --upgrade pip
+          pip install pytest pytest-cov
 
-      - name: Run tests with coverage
+      - name: Run tests and generate coverage inside Docker
         run: |
-          # For instance, if your tests run on a Dockerized Airflow service:
-          sudo docker exec airflow-airflow-webserver-1 bash -c "pytest --cache-clear --cov=/opt/airflow/dags --cov-report=term-missing /opt/airflow/test/ > pytest-coverage.txt"
-          # Adjust the --cov parameter as necessary for your project
-        
-      - name: Comment coverage
+          sudo docker exec airflow-airflow-webserver-1 bash -c "pytest --cov=/opt/airflow/dags /opt/airflow/test/ -v -p no:warnings > /opt/airflow/pytest-coverage.txt"
+
+      - name: Copy coverage report from container
+        run: |
+          sudo docker cp airflow-airflow-webserver-1:/opt/airflow/pytest-coverage.txt ./pytest-coverage.txt
+
+      - name: Comment coverage on PR
         uses: coroo/pytest-coverage-commentator@v1.0.2
         with:
           pytest-coverage: pytest-coverage.txt
