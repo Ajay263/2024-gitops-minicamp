@@ -162,7 +162,7 @@ Used Pytest to test the python code then Allure generates rich test coverage rep
 
 ![github actions img](data/github_actions.png)
 
-![github actions img](github_actions_2.png)
+![github actions img](data/github_actions_2.png)
 
 **10. Monitoring & Alerting**
 
