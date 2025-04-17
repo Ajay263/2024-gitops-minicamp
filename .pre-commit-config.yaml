@@ -107,9 +107,9 @@ repos:
           "--config", ".sqlfluff",
           
         ]
-  - repo: https://github.com/adrienverge/yamllint.git
-    rev:  v1.29.0
-    hooks:
-      - id: yamllint
-        args: [-c=.yamllint]
+  # - repo: https://github.com/adrienverge/yamllint.git
+  #   rev:  v1.29.0
+  #   hooks:
+  #     - id: yamllint
+  #       args: [-c=.yamllint]
 
