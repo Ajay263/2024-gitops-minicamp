@@ -1,14 +1,14 @@
 version: 2
 
 models:
-  - name: fact_order_performance_percentage
+  - name: fact_order_performance
     description: "Aggregated order fulfillment metrics including on-time, in-full, and OTIF percentages"
     tests:
       # Table-level tests
       - dbt_expectations.expect_table_row_count_to_be_between:
           min_value: 1
       - dbt_expectations.expect_table_columns_to_match_set:
-          column_list: ["on_time_percentage", "in_full_percentage", "otif_percentage"]
+          column_list: ["on_time_percentage", "in_full_percentage", "otif_percentage", "order_date", "city", "customer_name", "total_orders"]
 
     columns:
       - name: on_time_percentage
@@ -34,3 +34,23 @@ models:
           - dbt_expectations.expect_column_values_to_be_between:
               min_value: 0
               max_value: 100
+
+      - name: order_date
+        description: "Date when the order was placed"
+        tests:
+          - not_null
+
+      - name: city
+        description: "City where the customer is located"
+        tests:
+          - not_null
+
+      - name: customer_name
+        description: "Name of the customer"
+        tests:
+          - not_null
+
+      - name: total_orders
+        description: "Total number of orders for the day (aggregated by city and customer)"
+        tests:
+          - not_null

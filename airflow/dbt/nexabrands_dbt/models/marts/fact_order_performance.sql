@@ -43,35 +43,15 @@ daily_metrics as (
         ROUND(100.0 * AVG(otif), 2) as otif_percentage
     from base_orders
     group by order_date, city, customer_name
-),
-
--- Calculate rolling 7-day averages
-rolling_metrics as (
-    select
-        order_date,
-        city,
-        customer_name,
-        total_orders,
-        on_time_percentage,
-        in_full_percentage,
-        otif_percentage,
-        ROUND(AVG(on_time_percentage) over (
-            partition by city, customer_name
-            order by order_date
-            rows between 6 preceding and current row
-        ), 2) as seven_day_avg_on_time,
-        ROUND(AVG(in_full_percentage) over (
-            partition by city, customer_name
-            order by order_date
-            rows between 6 preceding and current row
-        ), 2) as seven_day_avg_in_full,
-        ROUND(AVG(otif_percentage) over (
-            partition by city, customer_name
-            order by order_date
-            rows between 6 preceding and current row
-        ), 2) as seven_day_avg_otif
-    from daily_metrics
 )
 
-select * from rolling_metrics
+select
+    order_date,
+    city,
+    customer_name,
+    total_orders,
+    on_time_percentage,
+    in_full_percentage,
+    otif_percentage
+from daily_metrics
 order by order_date desc, city asc, customer_name asc

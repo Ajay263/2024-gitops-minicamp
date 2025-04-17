@@ -20,7 +20,7 @@ sources:
           table_properties: "('skip.header.line.count'='1')"
         columns:
           - name: customer_id
-            data_type: bigint
+            data_type: date
             constraints:
               - type: not_null
           - name: ontime_target
