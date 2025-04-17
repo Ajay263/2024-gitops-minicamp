@@ -191,5 +191,10 @@ Used Pytest to test the python code then Allure generates rich test coverage rep
   ![grafana img](data/slack_notifications.png)
 
 
+## Areas  of Improvements
+* Add Data Contracts
+* Add AWS Secret Manager
+* Add Security Checks in all the workflows
+* Check for Security in Terraform ci/cd workflow
 
 
