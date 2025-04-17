@@ -65,7 +65,7 @@ The analytics schema in Redshift employs a star‑schema  centered on two fact t
 
 * Infrastructure-as-code compliance and cost guardrails are enforced via OPA policies written in Rego. In the GitHub Actions workflow, OPA evaluates the Terraform plan JSON and blocks any pull requests that violate defined constraints, ensuring that unauthorized or cost‑prohibitive changes never reach our AWS environment.
   
-![infra cost](infracost.png)
+![infra cost](data/infracost.png)
 
 
 In the example above, Infracost reports a monthly cost increase of 883USD  for the proposed changes and flags a cost policy violation because the defined threshold is 140USD. 
@@ -80,7 +80,7 @@ The GitHub Actions workflow then:
 
 Triggers Slack notifications to alert the operations team immediately, ensuring visibility and enabling rapid discussion around cost remediation.
 
-![slack notification](slack1.png)
+![slack notification](data/slack1.png)
 
 **4.Drift Detection**
 
@@ -92,7 +92,7 @@ Triggers Slack notifications to alert the operations team immediately, ensuring 
 
 * The workflow is intergrated with Slack notifications (as shown in the attached diagram) so that the operations team receives immediate alerts about any drift detected, enabling prompt action. 
   
-  ![drift slack](drift_slack.png)
+  ![drift slack](data/drift_slack.png)
 
 
 **5. Data Lake & ETL**
@@ -112,10 +112,10 @@ This separation enforces clear data ownership, enables lifecycle management (e.g
 * In this project glue was used to transform the data in the   source  s3 bucket   to the target s3 bucket
 * The folloing images shows the aws glue scripts being orchastrated by aiflow
   
-  ![aws glue job](airflow1.png)
+  ![aws glue job](data/airflow1.png)
 
   **If a task fails a Notification will be sent to slack**
-    ![failure ](failure.png)
+    ![failure ](data/failure.png)
 
 
 **7. Data Warehousing & Modeling**
@@ -127,7 +127,7 @@ This separation enforces clear data ownership, enables lifecycle management (e.g
 **dbt on EC2**
 
 * Open‑source dbt Core  was run  on an EC2 instance to define modular, versioned transformations in SQL. Hosting dbt on EC2 under our control keeps costs predictable, and running models via Airflow (below) ensures repeatable orchestration
- ![allure](dbt1.png)
+ ![allure](data/dbt1.png)
 
 **8. Orchestration & Scheduling**
 
@@ -151,16 +151,16 @@ This separation enforces clear data ownership, enables lifecycle management (e.g
 
 Used Pytest to test the python code then Allure generates rich test coverage reports hosted on GitHub Pages.
 
-![allure](allure.png)
+![allure](data/allure.png)
 
-![allure](allure_3.png)
+![allure](data/allure_3.png)
 
 
 **GitHub Actions**
 
  * Orchestrates the above steps, then stages scripts to S3 for Glue to pick up.
 
-![github actions img](github_actions.png)
+![github actions img](data/github_actions.png)
 
 ![github actions img](github_actions_2.png)
 
@@ -169,19 +169,19 @@ Used Pytest to test the python code then Allure generates rich test coverage rep
  * Prometheus scrapes Airflow and EC2 metrics, with Grafana dashboards visualizing system health. Alertmanager routes critical alerts (e.g., DAG failures) to Slack channels, enabling rapid incident response.
   
   **Airflow dag Dashboard**
-  ![grafana img](grafana_1.png)
+  ![grafana img](data/grafana_1.png)
 
   **Airflow cluster dashboard**
 
-  ![grafana img](grafana_2.png)
+  ![grafana img](data/grafana_2.png)
 
   **Operational management**
 
-   ![grafana img](grafana_3.png)
+   ![grafana img](data/grafana_3.png)
   
   **Slack Notifications**
 
-  ![grafana img](slack_notifications.png)
+  ![grafana img](data/slack_notifications.png)
 
 
 
