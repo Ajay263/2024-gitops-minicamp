@@ -22,7 +22,8 @@ select
     ol.actual_delivery_date,
     -- Calculate Volume Fill Rate: delivered_qty / order_qty (as a decimal)
     case
-        when ol.order_qty > 0 then (ol.delivery_qty::numeric / ol.order_qty)
+        when ol.order_qty > 0 and ol.delivery_qty = ol.order_qty then 1
+      else 0
     end as volume_fill_rate,
     -- Calculate Line Fill Rate: 1 if fully delivered, else 0
     case

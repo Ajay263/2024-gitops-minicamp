@@ -9,7 +9,7 @@ with date_spine as (
 
 enriched_dates as (
     select
-        date_day as date1,
+        date_day as date,
         -- Year
         cast(to_char(date_day, 'YYYYMMDD') as integer) as date_key,
         -- Quarter
