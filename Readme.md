@@ -33,10 +33,17 @@ Nexabrands’ new Supply Chain dashboard delivers a clear, up‑to‑date view o
 1.  Through Q1–Q2 2024, Nexabrands processed 3,600 orders—a 28.5% decline versus last year. Of these, only 836 arrived on time (–16.4%) and 522 arrived in full (–25.4%), resulting in a mere 171 truly “OTIF” shipments (–43%). While the overall slowdown partly reflects seasonal demand shifts, the steep drop in service levels requires immediate attention before we expand into new markets.
   
 2.  Johannesburg and Nelspruit lead the pack with 26–27 flawless deliveries each, yet smaller hubs like Pietermaritzburg and Grahamstown report fewer than five OTIF orders ,highlighting uneven supply‑chain reliability.
-3. Supermarket, Town & Co and Prime Grocers remain our best partners, but accounts such as Bargain Basket and Family Foods have very low OTIF counts and risk non‑renewal if performance doesn’t improve. 
+3. Supermarket, Town & Co and Prime Grocers remain our best partners, but accounts such as Bargain Basket and Family Foods have very low OTIF counts and risk non‑renewal if performance doesn’t improve.
+4. Bargain Basket and Family Foods have recorded OTIF (On‑Time In‑Full) rates well below the industry benchmark—typically ≥ 95%—placing them at significant risk of contract non‑renewal as retailers increasingly tie future agreements to reliable, complete deliveries.
 
 
 ![nexabrands dashboard](data/dashboard.png)
+
+**Operational and Business Outcomes**
+* Real‑time dashboards enable operations and customer‑success teams to intervene before small delays become large escalations.
+* Spotlight on specific cities and clients focuses efforts on the weakest links in the network.
+* By quantifying service gaps today, Nexabrands can address reliability before entering new markets in the next two years.
+* Demonstrable tracking of daily service metrics rebuilds trust with existing customers and supports contract renewals.
 
 ## Data Warehouse Overview
 
