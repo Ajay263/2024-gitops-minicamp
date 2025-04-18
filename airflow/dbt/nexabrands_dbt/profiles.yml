@@ -4,9 +4,9 @@ nexabrands_dbt:
   outputs:
     prod:
       type: redshift
-      host: nexabrands-redshift-workgroup.313142695879.us-east-1.redshift-serverless.amazonaws.com
-      user: admin
-      password: Password123!
+      host: <redshift host>
+      user: <redshift username>
+      password: <redshift password>
       port: 5439
       dbname: nexabrands_datawarehouse
       schema: nexabrands_dbt
@@ -16,7 +16,7 @@ nexabrands_dbt:
 
     pr:
       type: redshift
-      host: nexabrands-redshift-workgroup.313142695879.us-east-1.redshift-serverless.amazonaws.com
+      host:  <redshift host>
       user: admin
       password: Password123!
       port: 5439
