@@ -48,16 +48,6 @@ locals {
     customer_targets  = "customer_targets"
   }
   
-  # Datasets to validate with Great Expectations
-  data_quality_datasets = [
-      "products",
-      "orders",
-      "order_lines",
-      "order_fulfillment",
-      "customers",
-      "customer_targets"
-
-  ]
 }
 
 # Glue ETL Jobs
@@ -94,48 +84,5 @@ resource "aws_glue_job" "etl_jobs" {
   tags = {
     Environment = var.environment
     Service     = "glue"
-  }
-}
-
-
-
-# Updated Data Quality Testing Jobs
-resource "aws_glue_job" "data_quality_jobs" {
-  for_each = toset(local.data_quality_datasets)
-
-  name              = "topdevs-${var.environment}-${each.value}-quality-job"
-  role_arn          = var.glue_role_arn
-  glue_version      = "4.0"
-  worker_type       = "G.1X"
-  number_of_workers = 2
-  timeout           = 1440
-  max_retries       = 0
-
-  command {
-    name            = "glueetl"
-    python_version  = "3"
-    # Each job now points to its own script in the data_quality directory
-    script_location = "s3://nexabrand-${var.environment}-${var.code_bucket}/scripts/data_quality/${each.value}.py"
-  }
-
-  default_arguments = {
-    "--enable-continuous-cloudwatch-log" = "true"
-    "--job-language"                     = "python"
-    "--additional-python-modules"        = "great_expectations==0.15.50"
-    "--data-path"                        = "s3://nexabrand-${var.environment}-${var.target_bucket}/"
-    "--ge-config-path"                   = "s3://nexabrand-${var.environment}-${var.code_bucket}/great_expectations/great_expectations.yml"
-    "--enable-metrics"                   = "true"
-    "--job-bookmark-option"              = "job-bookmark-disable"
-  }
-
-  execution_property {
-    max_concurrent_runs = 1
-  }
-
-  tags = {
-    Environment = var.environment
-    Service     = "glue"
-    Type        = "DataQuality"
-    Dataset     = each.value
   }
 }
