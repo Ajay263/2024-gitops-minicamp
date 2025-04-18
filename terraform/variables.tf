@@ -187,7 +187,6 @@ variable "source_files" {
   default = {
     "customers.csv"         = "./modules/data/customers.csv"
     "customer_targets.csv"  = "./modules/data/customer_targets.csv"
-    "dates.csv"             = "./modules/data/dates.csv"
     "orders.csv"            = "./modules/data/orders.csv"
     "order_fulfillment.csv" = "./modules/data/order_fulfillment.csv"
     "order_lines.csv"       = "./modules/data/order_lines.csv"
@@ -203,7 +202,6 @@ variable "code_files" {
     "products.py"          = "./modules/scripts/products.py"
     "customers.py"         = "./modules/scripts/customers.py"
     "customer_targets.py"  = "./modules/scripts/customer_targets.py"
-    "dates.py"             = "./modules/scripts/dates.py"
     "order_fulfillment.py" = "./modules/scripts/order_fulfillment.py"
     "order_lines.py"       = "./modules/scripts/order_lines.py"
   }
