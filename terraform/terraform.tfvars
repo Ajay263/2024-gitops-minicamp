@@ -13,13 +13,13 @@ redshift_serverless_subnet_3_cidr = "10.0.3.0/24"
 
 redshift_serverless_namespace_name      = "nexabrands-redshift-namespace"
 redshift_serverless_database_name       = "nexabrands_datawarehouse"
-redshift_serverless_admin_username      = "<Add username>"
-redshift_serverless_admin_password      = "<Add password>" 
+redshift_serverless_admin_username      = "admin"
+redshift_serverless_admin_password      = "Password123!" ##Todo   Move to AWS Secrets Manager
 redshift_serverless_workgroup_name      = "nexabrands-redshift-workgroup"
 redshift_serverless_base_capacity       = 32
 redshift_serverless_publicly_accessible = false
 
 ami_id        = "ami-0e2c8caa4b6378d8c"
 instance_type = "t3.xlarge"
-dbt_password       = <Add password>
+dbt_password       = "YourSecurePassword123!" #Todo  Move to AWS Secrets Manager
 glue_database_name = "tickit_dbt"
