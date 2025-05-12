@@ -1,6 +1,5 @@
-# modules/ec2/variables.tf
 variable "project_name" {
-  description = "Name of the project used for resource naming"
+  description = "Name of the Data Engineering project used for resource naming"
   type        = string
 }
 
