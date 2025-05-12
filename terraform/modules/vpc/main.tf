@@ -1,4 +1,3 @@
-# modules/vpc/main.tf
 data "aws_availability_zones" "available" {}
 
 resource "aws_vpc" "redshift-serverless-vpc" {

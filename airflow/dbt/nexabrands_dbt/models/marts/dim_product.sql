@@ -1,4 +1,3 @@
--- models/dim_products.sql
 with source as (
     select *
     from {{ ref('stg_products') }}

@@ -1,4 +1,3 @@
--- models/fact_order_line_performance.sql
 with order_lines as (
     select *
     from {{ ref('stg_order_lines') }}

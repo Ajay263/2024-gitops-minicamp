@@ -4,7 +4,6 @@ models:
   - name: fact_order_performance
     description: "Aggregated order fulfillment metrics including on-time, in-full, and OTIF percentages"
     tests:
-      # Table-level tests
       - dbt_expectations.expect_table_row_count_to_be_between:
           min_value: 1
       - dbt_expectations.expect_table_columns_to_match_set:
