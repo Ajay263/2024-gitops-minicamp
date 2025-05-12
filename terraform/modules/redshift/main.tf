@@ -1,6 +1,4 @@
-# modules/redshift/main.tf
-
-# Add this at the top to get account ID
+# Account ID
 data "aws_caller_identity" "current" {}
 
 data "aws_region" "current" {}
@@ -28,11 +26,6 @@ resource "aws_redshiftserverless_workgroup" "serverless" {
     Name = var.redshift_serverless_workgroup_name
   }
 }
-
-# Add resource to execute SQL initialization
-# modules/redshift/main.tf
-
-# modules/redshift/main.tf
 
 resource "terraform_data" "sql_init" {
   depends_on = [aws_redshiftserverless_workgroup.serverless]

@@ -1,5 +1,4 @@
 
-# modules/redshift/outputs.tf
 output "redshift_namespace_id" {
   description = "ID of the created Redshift Serverless namespace"
   value       = aws_redshiftserverless_namespace.serverless.id

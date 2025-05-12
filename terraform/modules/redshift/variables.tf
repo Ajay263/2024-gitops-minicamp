@@ -1,5 +1,3 @@
-
-# modules/redshift/variables.tf
 variable "redshift_serverless_namespace_name" {
   description = "Name of the Redshift Serverless namespace"
   type        = string

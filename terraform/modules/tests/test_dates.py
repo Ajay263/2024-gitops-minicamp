@@ -6,8 +6,6 @@ from unittest.mock import (
 )
 
 import pytest
-
-# Import the module to test after mocking
 from dates import (
     clean_dates_data,
     clean_special_characters,
@@ -30,7 +28,6 @@ from pyspark.sql.types import (
     StructType,
 )
 
-# Mock the awsglue module
 sys.modules["awsglue"] = MagicMock()
 sys.modules["awsglue.context"] = MagicMock()
 sys.modules["awsglue.job"] = MagicMock()
@@ -53,7 +50,6 @@ def test_load_dates_data(spark_session):
         schema=["DATE", "mmm.yy", "week_no"],
     )
 
-    # Mock the GlueContext and its spark_session
     mock_glue_context = MagicMock()
     mock_glue_context.spark_session.read.format.return_value.option.return_value.schema.return_value.load.return_value = (
         mock_df
