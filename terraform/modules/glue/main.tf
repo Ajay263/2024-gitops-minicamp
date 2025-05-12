@@ -1,11 +1,6 @@
-# Get the current AWS account ID
+# Current AWS account ID
 data "aws_caller_identity" "current" {}
 
-# Glue Catalog Database for Reports
-resource "aws_glue_catalog_database" "database" {
-  name        = "topdevs-${var.environment}-report"
-  description = "Database for ${var.environment} environment organization reports"
-}
 
 # External Glue Catalog Database
 resource "aws_glue_catalog_database" "external" {
