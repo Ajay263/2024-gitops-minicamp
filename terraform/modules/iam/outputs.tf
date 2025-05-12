@@ -1,5 +1,3 @@
-
-# Output the Redshift role ARN
 output "redshift_role_arn" {
   value = aws_iam_role.redshift-serverless-role.arn
 }

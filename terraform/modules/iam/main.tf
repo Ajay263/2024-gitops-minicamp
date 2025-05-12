@@ -1,7 +1,6 @@
-# Add this at the top of your file
 data "aws_caller_identity" "current" {}
 
-# EC2 Instance Role - Create first to avoid circular dependencies
+# EC2 Instance Role(Created first to avoid circular dependencies)
 resource "aws_iam_role" "ec2_role" {
   name = "topdevs-${var.environment}-ec2-role"
 
@@ -23,7 +22,7 @@ resource "aws_iam_role" "ec2_role" {
   }
 }
 
-# Glue Service Role - Second
+# Glue Service Role 
 resource "aws_iam_role" "glue_service_role" {
   name = "topdevs-${var.environment}-glue-service-role"
   
@@ -46,7 +45,7 @@ resource "aws_iam_role" "glue_service_role" {
   }
 }
 
-# Redshift Serverless Role - Third
+# Redshift Serverless Role 
 resource "aws_iam_role" "redshift-serverless-role" {
   name = "topdevs-${var.environment}-redshift-serverless-role"
 
@@ -76,7 +75,7 @@ resource "aws_iam_instance_profile" "ec2_profile" {
   role = aws_iam_role.ec2_role.name
 }
 
-# EC2 Policy - Modified to use ARNs instead of direct references where possible
+# EC2 Policy 
 resource "aws_iam_role_policy" "ec2_policy" {
   name = "topdevs-${var.environment}-ec2-policy"
   role = aws_iam_role.ec2_role.id
@@ -84,7 +83,6 @@ resource "aws_iam_role_policy" "ec2_policy" {
   policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
-      # S3 permissions including the GX docs bucket
       {
         Effect = "Allow"
         Action = [
@@ -95,7 +93,6 @@ resource "aws_iam_role_policy" "ec2_policy" {
           "s3:DeleteObject",
           "s3:GetBucketAcl",       
           "s3:PutObjectAcl",
-          # Additional S3 admin actions for full control
           "s3:CreateBucket",
           "s3:DeleteBucket",
           "s3:PutBucketPolicy",
@@ -127,7 +124,6 @@ resource "aws_iam_role_policy" "ec2_policy" {
           "arn:aws:s3:::nexabrand-${var.environment}-gx-doc/*"
         ]
       },
-      # KMS permissions for EC2
       {
         Effect = "Allow"
         Action = [
@@ -143,7 +139,6 @@ resource "aws_iam_role_policy" "ec2_policy" {
           "*"
         ]
       },
-      # Glue permissions
       {
         Effect = "Allow"
         Action = [
@@ -179,7 +174,6 @@ resource "aws_iam_role_policy" "ec2_policy" {
         ]
         Resource = ["*"]
       },
-      # Redshift permissions
       {
         Effect = "Allow"
         Action = [
@@ -189,7 +183,6 @@ resource "aws_iam_role_policy" "ec2_policy" {
         ]
         Resource = ["*"]
       },
-      # CloudWatch Logs permissions
       {
         Effect = "Allow"
         Action = [
@@ -199,7 +192,6 @@ resource "aws_iam_role_policy" "ec2_policy" {
         ]
         Resource = ["arn:aws:logs:*:*:*"]
       },
-      # IAM PassRole permissions - Using interpolated ARNs
       {
         Effect = "Allow"
         Action = "iam:PassRole"
@@ -219,7 +211,6 @@ resource "aws_iam_role_policy" "ec2_policy" {
           }
         }
       },
-      # CloudWatch Logs query permissions
       {
         Effect = "Allow"
         Action = [
@@ -237,7 +228,7 @@ resource "aws_iam_role_policy" "ec2_policy" {
           "arn:aws:logs:us-east-1:${data.aws_caller_identity.current.account_id}:log-group:/aws-glue/jobs/output:*"
         ]
       },
-      # STS and AssumeRole permissions - Using interpolated ARNs
+      # STS and AssumeRole permissions(Using interpolated ARNs)
       {
         Effect = "Allow"
         Action = [
@@ -275,13 +266,11 @@ resource "aws_iam_role_policy" "glue_service_policy" {
   policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
-      # Existing Glue actions
       {
         Effect = "Allow"
         Action = ["glue:*"]
         Resource = ["*"]
       },
-      # Updated S3 actions with explicit GetObject for code bucket
       {
         Effect = "Allow"
         Action = [
@@ -303,7 +292,6 @@ resource "aws_iam_role_policy" "glue_service_policy" {
           "arn:aws:s3:::nexabrand-${var.environment}-gx-doc/*"
         ]
       },
-      # Add this new statement for Glue and logs bucket access
       {
         Effect = "Allow"
         Action = [
@@ -319,7 +307,7 @@ resource "aws_iam_role_policy" "glue_service_policy" {
           "arn:aws:s3:::*aws-logs*/*"
         ]
       },
-      # KMS actions for encryption/decryption
+
       {
         Effect = "Allow"
         Action = [
@@ -337,8 +325,6 @@ resource "aws_iam_role_policy" "glue_service_policy" {
     aws_iam_role.glue_service_role
   ]
 }
-
-# Redshift S3 Access Policy
 resource "aws_iam_role_policy" "redshift-s3-access-policy" {
   name = "topdevs-${var.environment}-redshift-serverless-role-s3-policy"
   role = aws_iam_role.redshift-serverless-role.id
@@ -381,7 +367,6 @@ resource "aws_iam_role_policy" "redshift-glue-access-policy" {
   policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
-      # Existing Glue permissions
       {
         Effect = "Allow"
         Action = [
@@ -422,11 +407,10 @@ resource "aws_iam_role_policy" "redshift-glue-access-policy" {
           "arn:aws:glue:*:${data.aws_caller_identity.current.account_id}:connection/*"
         ]
       },
-      # New Redshift Query Editor Full Access Permissions
+   
       {
         Effect = "Allow"
         Action = [
-          # Redshift Query Editor V2 Specific Permissions
           "redshift:DescribeQueryEditorV2",
           "redshift:GetQueryEditorV2Results",
           "redshift:CreateQueryEditorV2Favorites",
@@ -434,8 +418,6 @@ resource "aws_iam_role_policy" "redshift-glue-access-policy" {
           "redshift:ListQueryEditorV2Favorites",
           "redshift:BatchExecuteQueryEditorQuery",
           "redshift:UpdateQueryEditorV2Favorites",
-
-          # Additional Query and Cluster Interaction Permissions
           "redshift:BatchModifyClusterIamRoles",
           "redshift:CancelQuery",
           "redshift:CancelQuerySession",
@@ -456,8 +438,6 @@ resource "aws_iam_role_policy" "redshift-glue-access-policy" {
           "redshift:ModifyScheduledAction",
           "redshift:PauseCluster",
           "redshift:ResumeCluster",
-
-          # Comprehensive Redshift Serverless Permissions
           "redshift-serverless:*"
         ]
         Resource = ["*"]
