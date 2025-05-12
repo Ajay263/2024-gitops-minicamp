@@ -31,7 +31,6 @@ base_orders as (
         on o.customer_id = c.customer_id
 ),
 
-
 daily_metrics as (
     select
         order_date,
