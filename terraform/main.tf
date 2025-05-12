@@ -28,7 +28,6 @@ module "iam" {
   source_bucket = var.source_bucket
   target_bucket = var.target_bucket
   code_bucket   = var.code_bucket
-  sns_topic_arn = module.sns.topic_arn
   kms_key_arn   = module.s3.kms_key_arn
 }
 

@@ -10,10 +10,6 @@ variable "code_bucket" {
   type = string
 }
 
-variable "sns_topic_arn" {
-  type = string
-}
-
 variable "environment" {
   description = "Environment (dev/staging/prod)"
   type        = string
