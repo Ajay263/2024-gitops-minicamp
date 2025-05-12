@@ -89,7 +89,6 @@ def sample_order_lines_df(spark_session):
 
 def test_load_order_lines_data(spark_session, mock_glue_context):
     """Test that load_order_lines_data correctly loads CSV data with the specified schema."""
-    # Create test data
     test_data = pd.DataFrame(
         {
             "ORDER_ID": ["ORD-123", "ORD-456"],
@@ -103,11 +102,8 @@ def test_load_order_lines_data(spark_session, mock_glue_context):
     csv_path = "/tmp/test_order_lines.csv"
     test_data.to_csv(csv_path, index=False)
 
-    # Test function
     with patch("boto3.client") as mock_boto:
         result_df = load_order_lines_data(mock_glue_context, csv_path)
-
-        # Verify schema and data
         assert len(result_df.schema) == 6
         assert "ORDER_ID" in result_df.columns
         assert "PRODUCT_ID" in result_df.columns
@@ -136,13 +132,12 @@ def test_clean_order_qty_and_delivery_qty(spark_session, sample_order_lines_df):
 
 def test_filter_invalid_quantities(spark_session):
     """Test that rows with invalid quantities are filtered out."""
-    # Create test data with some invalid quantities
     data = [
-        ("ORD-1", "P1", 10, "2024-01-01", "2024-01-05", 8),  # Valid
-        ("ORD-2", "P2", 0, "2024-01-01", "2024-01-05", 5),  # Invalid ORDER_QTY
-        ("ORD-3", "P3", 15, "2024-01-01", "2024-01-05", 0),  # Invalid DELIVERY_QTY
-        ("ORD-4", "P4", -5, "2024-01-01", "2024-01-05", 10),  # Invalid ORDER_QTY
-        ("ORD-5", "P5", 20, "2024-01-01", "2024-01-05", -8),  # Invalid DELIVERY_QTY
+        ("ORD-1", "P1", 10, "2024-01-01", "2024-01-05", 8), 
+        ("ORD-2", "P2", 0, "2024-01-01", "2024-01-05", 5), 
+        ("ORD-3", "P3", 15, "2024-01-01", "2024-01-05", 0),  
+        ("ORD-4", "P4", -5, "2024-01-01", "2024-01-05", 10), 
+        ("ORD-5", "P5", 20, "2024-01-01", "2024-01-05", -8), 
     ]
     schema = StructType(
         [
@@ -163,12 +158,12 @@ def test_filter_invalid_quantities(spark_session):
 def test_filter_unwanted_values(spark_session):
     """Test that rows with unwanted values are filtered out."""
     data = [
-        ("ORD-1", "P1", 10, "2024-01-01", "2024-01-05", 8),  # Valid
-        ("NULL", "P2", 15, "2024-01-01", "2024-01-05", 12),  # Unwanted ORDER_ID
-        ("ORD-3", "null", 20, "2024-01-01", "2024-01-05", 18),  # Unwanted PRODUCT_ID
-        ("ORD-4", "P4", 25, "NA", "2024-01-05", 22),  # Unwanted AGREED_DELIVERY_DATE
-        ("ORD-5", "P5", 30, "2024-01-01", "none", 28),  # Unwanted ACTUAL_DELIVERY_DATE
-        ("ORD-6", "P6", 35, "2024-01-01", "2024-01-05", "N/A"),  # Unwanted DELIVERY_QTY
+        ("ORD-1", "P1", 10, "2024-01-01", "2024-01-05", 8),  
+        ("NULL", "P2", 15, "2024-01-01", "2024-01-05", 12),  
+        ("ORD-3", "null", 20, "2024-01-01", "2024-01-05", 18),  
+        ("ORD-4", "P4", 25, "NA", "2024-01-05", 22), 
+        ("ORD-5", "P5", 30, "2024-01-01", "none", 28),  
+        ("ORD-6", "P6", 35, "2024-01-01", "2024-01-05", "N/A"), 
     ]
     schema = StructType(
         [
@@ -190,13 +185,13 @@ def test_filter_unwanted_values(spark_session):
 def test_drop_null_values(spark_session):
     """Test that rows with null values are dropped."""
     data = [
-        ("ORD-1", "P1", 10, "2024-01-01", "2024-01-05", 8),  # Valid
-        (None, "P2", 15, "2024-01-01", "2024-01-05", 12),  # Null ORDER_ID
-        ("ORD-3", None, 20, "2024-01-01", "2024-01-05", 18),  # Null PRODUCT_ID
-        ("ORD-4", "P4", None, "2024-01-01", "2024-01-05", 22),  # Null ORDER_QTY
-        ("ORD-5", "P5", 30, None, "2024-01-05", 28),  # Null AGREED_DELIVERY_DATE
-        ("ORD-6", "P6", 35, "2024-01-01", None, 32),  # Null ACTUAL_DELIVERY_DATE
-        ("ORD-7", "P7", 40, "2024-01-01", "2024-01-05", None),  # Null DELIVERY_QTY
+        ("ORD-1", "P1", 10, "2024-01-01", "2024-01-05", 8),  
+        (None, "P2", 15, "2024-01-01", "2024-01-05", 12),  
+        ("ORD-3", None, 20, "2024-01-01", "2024-01-05", 18),  
+        ("ORD-4", "P4", None, "2024-01-01", "2024-01-05", 22),  
+        ("ORD-5", "P5", 30, None, "2024-01-05", 28),  
+        ("ORD-6", "P6", 35, "2024-01-01", None, 32), 
+        ("ORD-7", "P7", 40, "2024-01-01", "2024-01-05", None),  
     ]
     schema = StructType(
         [
@@ -239,13 +234,9 @@ def test_add_derived_columns(spark_session):
     """Test that derived columns are correctly added."""
     data = [
         ("ORD-1", "P1", 10, date(2024, 1, 1), date(2024, 1, 1), 10),
-        # Late delivery, complete
         ("ORD-2", "P2", 15, date(2024, 1, 1), date(2024, 1, 5), 15),
-        # On-time, incomplete
         ("ORD-3", "P3", 20, date(2024, 1, 1), date(2024, 1, 1), 15),
-        # Early delivery, complete
         ("ORD-4", "P4", 25, date(2024, 1, 10), date(2024, 1, 5), 25),
-        # Early delivery, incomplete
         ("ORD-5", "P5", 30, date(2024, 1, 10), date(2024, 1, 5), 20),
     ]
     schema = StructType(
@@ -270,26 +261,18 @@ def test_add_derived_columns(spark_session):
     assert rows[0]["delivery_completion_rate"] == 100.0
     assert rows[0]["is_on_time"] == "Yes"
     assert rows[0]["is_complete_delivery"] == "Yes"
-
-    # Check ORD-2: Late delivery (4 days), complete
     assert rows[1]["delivery_delay_days"] == 4
     assert rows[1]["delivery_completion_rate"] == 100.0
     assert rows[1]["is_on_time"] == "No"
     assert rows[1]["is_complete_delivery"] == "Yes"
-
-    # Check ORD-3: On-time, incomplete (75%)
     assert rows[2]["delivery_delay_days"] == 0
     assert rows[2]["delivery_completion_rate"] == 75.0
     assert rows[2]["is_on_time"] == "Yes"
     assert rows[2]["is_complete_delivery"] == "No"
-
-    # Check ORD-4: Early delivery (-5 days), complete
     assert rows[3]["delivery_delay_days"] == -5
     assert rows[3]["delivery_completion_rate"] == 100.0
     assert rows[3]["is_on_time"] == "Yes"
     assert rows[3]["is_complete_delivery"] == "Yes"
-
-    # Check ORD-5: Early delivery (-5 days), incomplete (66.67%)
     assert rows[4]["delivery_delay_days"] == -5
     assert abs(rows[4]["delivery_completion_rate"] - 66.67) < 0.01
     assert rows[4]["is_on_time"] == "Yes"
@@ -335,9 +318,9 @@ def test_clean_product_id_with_invalid_format(spark_session):
 def test_filter_invalid_quantities_with_null_values(spark_session):
     """Test filter_invalid_quantities with null values in quantities."""
     data = [
-        ("ORD-1", "P1", 10, "2024-01-01", "2024-01-05", 8),  # Valid
-        ("ORD-2", "P2", None, "2024-01-01", "2024-01-05", 5),  # Null ORDER_QTY
-        ("ORD-3", "P3", 15, "2024-01-01", "2024-01-05", None),  # Null DELIVERY_QTY
+        ("ORD-1", "P1", 10, "2024-01-01", "2024-01-05", 8),  
+        ("ORD-2", "P2", None, "2024-01-01", "2024-01-05", 5),  
+        ("ORD-3", "P3", 15, "2024-01-01", "2024-01-05", None), 
     ]
     schema = StructType(
         [
@@ -358,8 +341,8 @@ def test_filter_invalid_quantities_with_null_values(spark_session):
 def test_add_derived_columns_with_null_dates(spark_session):
     """Test add_derived_columns with null dates."""
     data = [
-        ("ORD-1", "P1", 10, None, date(2024, 1, 5), 8),  # Null agreed date
-        ("ORD-2", "P2", 15, date(2024, 1, 1), None, 12),  # Null actual date
+        ("ORD-1", "P1", 10, None, date(2024, 1, 5), 8),  
+        ("ORD-2", "P2", 15, date(2024, 1, 1), None, 12), 
     ]
     schema = StructType(
         [

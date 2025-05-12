@@ -19,7 +19,6 @@ from cosmos.constants import (
 )
 from cosmos.profiles import RedshiftUserPasswordProfileMapping
 
-# Profile configuration for Redshift
 profile_config = ProfileConfig(
     profile_name="default",
     target_name="dev",
@@ -32,7 +31,6 @@ profile_config = ProfileConfig(
     ),
 )
 
-# Project configuration
 dbt_project_path = f"{os.environ['AIRFLOW_HOME']}/dbt/nexabrands_dbt"
 dbt_executable_path = f"{os.environ['AIRFLOW_HOME']}/dbt_venv/bin/dbt"
 
@@ -46,7 +44,6 @@ project_config = ProjectConfig(
     partial_parse=False,
 )
 
-# Execution configuration
 execution_config = ExecutionConfig(
     dbt_executable_path=dbt_executable_path,
 )
@@ -96,19 +93,6 @@ def nexabrands_dbt_incremental_dag() -> None:
         bash_command=f"cd {dbt_project_path} && {dbt_executable_path} source freshness --profiles-dir {dbt_project_path}",
     )
 
-    # snapshots = DbtTaskGroup(
-    #     group_id="snapshots",
-    #     project_config=project_config,
-    #     profile_config=profile_config,
-    #     execution_config=execution_config,
-    #     render_config=RenderConfig(
-    #         load_method=LoadMode.DBT_MANIFEST,
-    #         select=["path:snapshots"],
-    #         test_behavior=TestBehavior.AFTER_ALL,
-    #         dbt_deps=False,
-    #     ),
-    # )
-
     staging_models = DbtTaskGroup(
         group_id="staging_models",
         project_config=project_config,
@@ -121,19 +105,6 @@ def nexabrands_dbt_incremental_dag() -> None:
             dbt_deps=False,
         ),
     )
-
-    # intermediate_models = DbtTaskGroup(
-    #     group_id="intermediate_models",
-    #     project_config=project_config,
-    #     profile_config=profile_config,
-    #     execution_config=execution_config,
-    #     render_config=RenderConfig(
-    #         load_method=LoadMode.DBT_MANIFEST,
-    #         select=["path:models/intermediate"],
-    #         test_behavior=TestBehavior.AFTER_EACH,
-    #         dbt_deps=False,
-    #     ),
-    # )
 
     marts_models = DbtTaskGroup(
         group_id="marts_models",
@@ -158,6 +129,5 @@ def nexabrands_dbt_incremental_dag() -> None:
         >> marts_models
         >> post_dbt_workflow
     )
-
 
 dag = nexabrands_dbt_incremental_dag()

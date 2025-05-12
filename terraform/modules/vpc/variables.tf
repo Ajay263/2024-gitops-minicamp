@@ -1,4 +1,3 @@
-# modules/vpc/variables.tf
 variable "redshift_serverless_vpc_cidr" {
   description = "CIDR block for the VPC"
   type        = string

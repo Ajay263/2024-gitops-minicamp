@@ -1,7 +1,7 @@
 provider "aws" {
   region = var.aws_region
 }
-# main.tf.
+
 module "s3" {
   source = "./modules/s3"
 
@@ -33,9 +33,7 @@ module "iam" {
 }
 
 module "glue" {
-  source = "./modules/glue"
-
-  # Required Variables
+  source        = "./modules/glue"
   environment   = var.environment
   source_bucket = var.source_bucket
   target_bucket = var.target_bucket

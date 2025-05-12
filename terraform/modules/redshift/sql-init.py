@@ -35,7 +35,7 @@ def wait_for_workgroup(redshift_client, workgroup_name, max_attempts=30):
 
 def check_object_exists(redshift_client, database_name, workgroup_name, query):
     """
-    Check if an object exists in Redshift
+    Check the existence of  an object  in Redshift
     """
     try:
         response = redshift_client.execute_statement(
@@ -96,10 +96,10 @@ def execute_sql(sql_statements, database_name, workgroup_name, max_retries=3):
                         raise Exception(
                             f"Query failed after {max_retries} retries: {error_message}"
                         )
-                    time.sleep(5)  # Wait before retrying
+                    time.sleep(5)  
                     continue
 
-                break  # Success - exit retry loop
+                break  
 
             except Exception as e:
                 if "already exists" in str(e).lower():
@@ -108,7 +108,7 @@ def execute_sql(sql_statements, database_name, workgroup_name, max_retries=3):
                 retry_count += 1
                 if retry_count == max_retries:
                     raise
-                time.sleep(5)  # Wait before retrying
+                time.sleep(5)  
 
 
 def main():
@@ -123,22 +123,18 @@ def main():
     iam_role_arn = sys.argv[3]
     dbt_password = sys.argv[4]
 
-    # Print working directory and arguments for debugging
     print(f"Working directory: {os.getcwd()}")
     print(f"Database: {database_name}")
     print(f"Workgroup: {workgroup_name}")
     print(f"IAM Role: {iam_role_arn}")
 
-    # Wait for workgroup to be available
     redshift_client = boto3.client("redshift-serverless")
     if not wait_for_workgroup(redshift_client, workgroup_name):
         print("Failed to wait for workgroup to become available")
         sys.exit(1)
 
-    # Switch to redshift-data client for SQL operations
     redshift_data_client = boto3.client("redshift-data")
 
-    # Check what exists
     external_schema_exists = check_object_exists(
         redshift_data_client,
         database_name,
@@ -167,10 +163,8 @@ def main():
         "SELECT 1 FROM pg_user WHERE usename = 'dbt'",
     )
 
-    # Build SQL statements based on what exists
     sql_statements = []
 
-    # Only create schemas if they don't exist
     if not external_schema_exists:
         sql_statements.append(
             f"""
@@ -201,18 +195,15 @@ def main():
             ]
         )
 
-    # Always apply grants (these are idempotent)
     sql_statements.extend(
         [
-            # Grants on nexabrands_external schema
+         
             "GRANT USAGE ON SCHEMA nexabrands_external TO GROUP dbt;",
             "GRANT CREATE ON SCHEMA nexabrands_external TO GROUP dbt;",
             "GRANT ALL ON ALL TABLES IN SCHEMA nexabrands_external TO GROUP dbt;",
-            # Grants on nexabrands_dbt schema
             "GRANT USAGE ON SCHEMA nexabrands_dbt TO GROUP dbt;",
             "GRANT CREATE ON SCHEMA nexabrands_dbt TO GROUP dbt;",
             "GRANT ALL ON ALL TABLES IN SCHEMA nexabrands_dbt TO GROUP dbt;",
-            # Reassign schema ownership
             "ALTER SCHEMA nexabrands_dbt OWNER TO dbt;",
             "ALTER SCHEMA nexabrands_external OWNER TO dbt;",
         ]

@@ -18,12 +18,11 @@ from cosmos import ProfileConfig
 from cosmos.operators import DbtDocsOperator
 from cosmos.profiles import RedshiftUserPasswordProfileMapping
 
-# Environment setup
 env = 'local'
 dbt_path = f"{os.environ['AIRFLOW_HOME']}/dbt_venv/bin"
 os.environ['PATH'] = f"{dbt_path}:{os.environ['PATH']}"
 
-# Profile configuration for Redshift.
+
 profile_config = ProfileConfig(
     profile_name="default",
     target_name="dev",
@@ -42,36 +41,29 @@ def save_docs_locally(project_dir: str, output_dir: str, **kwargs):
     Added **kwargs to catch additional parameters like context
     """
     os.makedirs(output_dir, exist_ok=True)
-    
-    # Files to copy from target directory
     files_to_copy = [
         "target/index.html",
         "target/manifest.json",
         "target/graph.gpickle",
         "target/catalog.json",
-        "target/run_results.json"  # Optional but useful
+        "target/run_results.json"  
     ]
     
-    # Copy individual files
     for file in files_to_copy:
         src = os.path.join(project_dir, file)
         dst = os.path.join(output_dir, os.path.basename(file))
-        if os.path.exists(src):  # Check if file exists before copying
+        if os.path.exists(src): 
             shutil.copy2(src, dst)
             print(f"Copied {src} to {dst}")
         else:
             print(f"Warning: {src} not found, skipping.")
     
-    # Copy assets directory if it exist
-    assets_src = os.path.join(project_dir, "target/assets")  # Changed from "assets" to "target/assets"
+    assets_src = os.path.join(project_dir, "target/assets")  
     assets_dst = os.path.join(output_dir, "assets")
     
     if os.path.exists(assets_src):
-        # Remove existing assets directory if it exists
         if os.path.exists(assets_dst):
             shutil.rmtree(assets_dst)
-        
-        # Copy the entire assets directory
         shutil.copytree(assets_src, assets_dst)
         print(f"Copied assets directory from {assets_src} to {assets_dst}")
     else:
@@ -100,13 +92,9 @@ def upload_docs_to_s3():
     local_dir = "/opt/airflow/dbt-docs/"
     s3_bucket = "nexabrand-prod-target"
     s3_key_prefix = "dbt-docs/"
-    
-    # Create boto3 client directly
     s3_client = boto3.client('s3')
-    
     if not os.path.exists(local_dir):
         raise FileNotFoundError(f"Directory {local_dir} does not exist")
-    
     files_uploaded = 0
     
     def upload_directory(directory, base_dir):
@@ -122,14 +110,12 @@ def upload_docs_to_s3():
                 upload_directory(local_path, base_dir)
             else:
                 print(f"Uploading {local_path} to s3://{s3_bucket}/{s3_key}")
-                
-                # Using boto3 client directly with SSE-S3 encryption
                 s3_client.upload_file(
                     Filename=local_path,
                     Bucket=s3_bucket,
                     Key=s3_key,
                     ExtraArgs={
-                        'ServerSideEncryption': 'AES256'  # Use SSE-S3 instead of KMS
+                        'ServerSideEncryption': 'AES256'  
                     }
                 )
                 files_uploaded += 1
@@ -152,11 +138,9 @@ def upload_docs_to_s3():
     description="Generate and upload DBT documentation to S3",
 )
 def dbt_docs_generator():
-    # Verify connection first
     connection_check = verify_redshift_connection()
     
     with TaskGroup(group_id="dbt_setup", tooltip="DBT setup tasks") as setup:
-        # Install dbt dependencies with better error handling
         install_deps = BashOperator(
             task_id="install_dbt_deps",
             bash_command=f"""
@@ -169,8 +153,6 @@ def dbt_docs_generator():
             env={'PATH': os.environ['PATH']},
         )
     
-    # Use DbtDocsOperator with properly formatted callback
-    # The callback function needs to accept **kwargs to handle the context parameter
     generate_dbt_docs = DbtDocsOperator(
         task_id="generate_dbt_docs",
         project_dir="/opt/airflow/dbt/nexabrands_dbt",
@@ -179,7 +161,6 @@ def dbt_docs_generator():
         env={'PATH': os.environ['PATH']}
     )
     
-    # Use the improved upload task
     upload_docs = upload_docs_to_s3()
     
     connection_check >> setup >> generate_dbt_docs >> upload_docs

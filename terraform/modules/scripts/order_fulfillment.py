@@ -70,8 +70,8 @@ def transform_metrics(df: DataFrame) -> DataFrame:
             when(col(column) == -1, 1)
             .when(col(column) == 1, 1)
             .when(col(column) <= 0.5, 0)
-            .when(col(column) > 1, lit(None))  # Only values > 1 become null
-            .otherwise(1)  # Values between 0.5 and 1 become 1
+            .when(col(column) > 1, lit(None))  
+            .otherwise(1)  
             .cast(IntegerType()),
         )
     return df
@@ -94,40 +94,33 @@ def clean_order_fulfillment_data(df: DataFrame) -> DataFrame:
 
 def write_transformed_data(df: DataFrame, s3_output_path: str) -> None:
     """Write the transformed data to an S3 bucket as a single CSV file."""
-    # Coalesce the DataFrame into a single partition to ensure one output file
     df.coalesce(1).write.mode("overwrite").format("csv").option("header", "true").save(
         s3_output_path
     )
 
 
 if __name__ == "__main__":
-    # Initialize Spark session and Glue context
     spark = SparkSession.builder.appName("OrderFulfillmentDataProcessing").getOrCreate()
     glue_context = GlueContext(spark.sparkContext)
     job = Job(glue_context)
     job.init("order-fulfillment-job")
 
-    # S3 paths
     s3_input_path = (
-        "s3://nexabrand-prod-source/data/order_fulfillment.csv"  # Input file path
+        "s3://nexabrand-prod-source/data/order_fulfillment.csv"  
     )
-    s3_output_folder = "s3://nexabrand-prod-target/order_fulfillment/"  # Output folder
-    s3_temp_output_path = f"{s3_output_folder}temp/"  # Temporary output path
+    s3_output_folder = "s3://nexabrand-prod-target/order_fulfillment/"  
+    s3_temp_output_path = f"{s3_output_folder}temp/"  
 
-    # Load and clean data
     order_fulfillment_df = load_order_fulfillment_data(glue_context, s3_input_path)
     cleaned_order_fulfillment = clean_order_fulfillment_data(order_fulfillment_df)
 
-    # Save the cleaned data to S3 as a single CSV file in a temporary folder
     write_transformed_data(cleaned_order_fulfillment, s3_temp_output_path)
 
-    # Use boto3 to rename the file to `order_fulfillment.csv`
     import boto3
 
     s3_client = boto3.client("s3")
-    bucket_name = "nexabrand-prod-target"  # Output bucket name
+    bucket_name = "nexabrand-prod-target"  
 
-    # Find the generated CSV file in the temporary folder
     response = s3_client.list_objects_v2(
         Bucket=bucket_name, Prefix="order_fulfillment/temp/"
     )
@@ -135,18 +128,13 @@ if __name__ == "__main__":
         for obj in response["Contents"]:
             if obj["Key"].endswith(".csv"):
                 source_key = obj["Key"]
-                # Construct the destination key
                 destination_key = "order_fulfillment/order_fulfillment.csv"
-                # Copy the file to the new location
                 copy_source = {"Bucket": bucket_name, "Key": source_key}
                 s3_client.copy_object(
                     CopySource=copy_source, Bucket=bucket_name, Key=destination_key
                 )
-                # Delete the original file
                 s3_client.delete_object(Bucket=bucket_name, Key=source_key)
 
-    # Delete the temporary folder
     s3_client.delete_object(Bucket=bucket_name, Key="order_fulfillment/temp/")
 
-    # Commit the Glue job
     job.commit()

@@ -1,5 +1,3 @@
-
-# outputs.tf
 output "source_bucket_name" {
   description = "Name of the source S3 bucket"
   value       = module.s3.source_bucket_id

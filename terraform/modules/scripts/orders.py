@@ -20,19 +20,12 @@ from pyspark.sql.types import (
 
 def load_orders_data(spark: SparkSession, file_path: str) -> DataFrame:
     """
-
     Load orders data from a CSV file.
-    Args:
-        spark (SparkSession): An active Spark session.
-        file_path (str): The path to the CSV file containing orders data.
-    Returns:
-        DataFrame: A Spark DataFrame containing the loaded data with a defined
-        schema
     """
     schema = StructType(
         [
             StructField("ORDER_ID", StringType(), True),
-            StructField("customer_id", StringType(), True),  # Updated column name
+            StructField("customer_id", StringType(), True),  
             StructField("order_placement_date", StringType(), True),
         ]
     )
@@ -44,20 +37,11 @@ def load_orders_data(spark: SparkSession, file_path: str) -> DataFrame:
 def clean_orders_data(df: DataFrame) -> DataFrame:
     """
     Clean and transform orders data.
-    The function performs the following operations:
-    - Filters out rows with unwanted values in any column.
-    - Cleans and standardizes the `order_id` column.
-    - Validates and converts the `customer_id` column to an integer type.
-    - Parses and cleans the `order_placement_date` column
-    - Drops rows with null values and removes duplicates.
-    Args:
-        df (DataFrame): A Spark DataFrame containing the raw orders data.
-    Returns:
-        DataFrame: A cleaned and transformed Spark DataFrame.
+
     """
     orders_df = df.selectExpr(
         "ORDER_ID as order_id",
-        "customer_id",  # Updated column name
+        "customer_id",  
         "order_placement_date",
     )
 
@@ -85,7 +69,6 @@ def clean_orders_data(df: DataFrame) -> DataFrame:
         ).otherwise(col("customer_id").cast(IntegerType())),
     )
 
-    # First clean and standardize the date format
     orders_df = orders_df.withColumn(
         "order_placement_date",
         when(
@@ -96,13 +79,13 @@ def clean_orders_data(df: DataFrame) -> DataFrame:
         ),
     )
 
-    # Replace any year with 2024 before converting to date
+    
     orders_df = orders_df.withColumn(
         "order_placement_date",
         regexp_replace(col("order_placement_date"), r"\d{4}", "2024"),
     )
 
-    # Convert to date type
+
     orders_df = orders_df.withColumn(
         "order_placement_date",
         to_date(col("order_placement_date"), "MM/dd/yyyy"),
@@ -115,14 +98,12 @@ def clean_orders_data(df: DataFrame) -> DataFrame:
 if __name__ == "__main__":
     spark = SparkSession.builder.appName("OrdersDataProcessing").getOrCreate()
 
-    # S3 paths
     input_path = "s3a://nexabrand-prod-source/data/orders.csv"
     output_path = "s3a://nexabrand-prod-target/orders/orders.csv"
 
     orders_df = load_orders_data(spark, input_path)
     cleaned_orders = clean_orders_data(orders_df)
 
-    # Write as CSV with corrected options
     cleaned_orders.write.mode("overwrite").option("header", "true").option(
         "quote", '"'
     ).option("escape", '"').csv(output_path)

@@ -5,8 +5,6 @@ from unittest.mock import (
 
 import pandas as pd
 import pytest
-
-# Import the functions to test
 from orders import (
     clean_orders_data,
     load_orders_data,
@@ -51,9 +49,9 @@ def sample_orders_df(spark_session):
         ("ORD321", "1005ABC", "05/05/2024"),
         ("ORD654", "1006", "Monday, 06/10/2023"),
         ("ORD987", "1007", "07/15/2023"),
-        ("ORD987", "1007", "07/15/2023"),  # Duplicate for testing
-        ("", "NULL", ""),  # Empty values
-        ("Unknown", "none", "N/A"),  # Unwanted values
+        ("ORD987", "1007", "07/15/2023"),  
+        ("", "NULL", ""), 
+        ("Unknown", "none", "N/A"),  
     ]
     schema = StructType(
         [
@@ -91,13 +89,15 @@ def test_load_orders_data(spark_session):
 
     result_df = load_orders_data(spark_session, csv_path)
 
-    # Check schema
+    
+    
     assert len(result_df.schema) == 3
     assert "ORDER_ID" in result_df.columns
     assert "customer_id" in result_df.columns
     assert "order_placement_date" in result_df.columns
 
-    # Check data
+
+    
     assert result_df.count() == 3
     assert result_df.filter(result_df.ORDER_ID == "ORD123").count() == 1
 
@@ -127,7 +127,8 @@ def test_clean_orders_data_unwanted_values(spark_session):
     test_df = spark_session.createDataFrame(data=data, schema=schema)
 
     result_df = clean_orders_data(test_df)
-    assert result_df.count() == 1  # Only one valid row
+    assert result_df.count() == 1  
+    
     assert result_df.collect()[0].order_id == "ORD123"
 
 
@@ -150,11 +151,8 @@ def test_clean_orders_data_customer_id_cleaning(spark_session):
 
     result_df = clean_orders_data(test_df)
 
-    # Check that valid IDs are converted to integers
     assert result_df.filter(result_df.customer_id == 1001).count() == 1
     assert result_df.filter(result_df.customer_id == 1004).count() == 1
-
-    # Check that invalid IDs are filtered
     assert result_df.filter(col("customer_id").like("ID_%")).count() == 0
     assert result_df.filter(col("customer_id").rlike("[^0-9.]")).count() == 0
 
@@ -178,10 +176,8 @@ def test_clean_orders_data_date_cleaning(spark_session):
 
     result_df = clean_orders_data(test_df)
 
-    # Check that all dates are standardized to 2024
     assert all(row.order_placement_date.year == 2024 for row in result_df.collect())
 
-    # Check specific date conversions
     jan_date = (
         result_df.filter(result_df.order_id == "ORD123")
         .collect()[0]
@@ -203,9 +199,9 @@ def test_clean_orders_data_drop_duplicates(spark_session):
     """Test that duplicate rows are properly removed."""
     data = [
         ("ORD123", "1001", "01/15/2024"),
-        ("ORD123", "1001", "01/15/2024"),  # Duplicate
+        ("ORD123", "1001", "01/15/2024"),  
         ("ORD456", "1002", "02/20/2024"),
-        ("ORD456", "1002", "02/20/2024"),  # Duplicate
+        ("ORD456", "1002", "02/20/2024"),  
     ]
     schema = StructType(
         [
@@ -217,7 +213,7 @@ def test_clean_orders_data_drop_duplicates(spark_session):
     test_df = spark_session.createDataFrame(data=data, schema=schema)
 
     result_df = clean_orders_data(test_df)
-    assert result_df.count() == 2  # Only unique rows
+    assert result_df.count() == 2  
 
 
 def test_clean_orders_data_drop_nulls(spark_session):
@@ -236,7 +232,6 @@ def test_clean_orders_data_drop_nulls(spark_session):
         ]
     )
     test_df = spark_session.createDataFrame(data=data, schema=schema)
-
     result_df = clean_orders_data(test_df)
-    assert result_df.count() == 1  # Only one row without nulls
+    assert result_df.count() == 1  
     assert result_df.collect()[0].order_id == "ORD123"

@@ -7,8 +7,6 @@ from unittest.mock import (
 )
 
 import pytest
-
-# Import the module to test after mocking.
 from customer_targets import (
     clean_customer_id,
     clean_customer_targets_data,
@@ -47,7 +45,6 @@ def test_load_customer_targets_data(spark_session):
         schema=["CUSTOMER_ID", "ontime_target%", "infull_target%", "OTIF_TARGET%"],
     )
 
-    # Mock the GlueContext and its spark_session
     mock_glue_context = MagicMock()
     mock_glue_context.spark_session.read.format.return_value.option.return_value.schema.return_value.load.return_value = (
         mock_df

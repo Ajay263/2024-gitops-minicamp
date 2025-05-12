@@ -60,7 +60,7 @@ def sample_customers_df(spark_session):
         (None, "Invalid User", "Seattle"),
         (4.5, "Mary Williams", "Boston"),
         (5.0, "Steve@Brown", "Dallas"),
-        (5.0, "Steve@Brown", "Dallas"),  # Duplicate for testing
+        (5.0, "Steve@Brown", "Dallas"),  
     ]
     schema = StructType(
         [
@@ -234,7 +234,6 @@ def test_clean_customer_data_integration(sample_customers_df, expected_schema):
     assert result_df.schema["customer_id"].dataType == IntegerType()
     cleaned_data = result_df.collect()
 
-    # Updated to expect 4 records (1, 2, 3, 5) since 4.5 is not a whole number and will be filtered out
     assert result_df.count() == 4
 
     john_row = result_df.filter(result_df.customer_id == 1).collect()[0]
@@ -250,7 +249,6 @@ def test_write_transformed_data(spark_session, sample_customers_df):
     with patch("boto3.client") as mock_boto:
         write_transformed_data(sample_customers_df, test_output_path)
 
-        # Since writing actually happens in this test, let's read it back to verify
         result_df = (
             spark_session.read.format("csv")
             .option("header", "true")
@@ -275,5 +273,5 @@ def test_clean_string_columns_empty_strings(spark_session):
     columns_to_clean = ["customer_name", "city"]
     result_df = clean_string_columns(test_df, columns_to_clean)
     cleaned_data = result_df.collect()
-    assert cleaned_data[0][1] == ""  # Empty name remains empty
-    assert cleaned_data[0][2] == ""  # Empty city remains empty
+    assert cleaned_data[0][1] == "" 
+    assert cleaned_data[0][2] == "" 
