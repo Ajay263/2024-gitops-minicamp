@@ -1,5 +1,3 @@
-
-# modules/ec2/outputs.tf
 output "instance_id" {
   description = "ID of the created EC2 instance"
   value       = aws_instance.rag_cs_instance.id
