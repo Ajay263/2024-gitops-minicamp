@@ -31,7 +31,7 @@ base_orders as (
         on o.customer_id = c.customer_id
 ),
 
--- Calculate daily aggregates by city and customer
+
 daily_metrics as (
     select
         order_date,

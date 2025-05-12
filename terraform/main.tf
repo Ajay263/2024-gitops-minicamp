@@ -40,10 +40,6 @@ module "glue" {
   code_bucket   = var.code_bucket
   glue_role_arn = module.iam.glue_role_arn
 }
-module "sns" {
-  source      = "./modules/sns"
-  environment = var.environment
-}
 
 module "vpc" {
   source = "./modules/vpc"
